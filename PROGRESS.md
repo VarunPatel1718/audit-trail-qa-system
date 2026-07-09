@@ -2,8 +2,8 @@
 
 > Keep this file at the root of your repo. Update it at the end of every work session (ask Claude Code to do it automatically — see instructions at the bottom). This is your single source of truth across devices.
 
-**Last updated:** 2026-07-09
-**Current phase:** Phase 1 — Requirements Analysis
+**Last updated:** 2026-07-10
+**Current phase:** Phase 5 — Backend Foundation
 
 ---
 
@@ -42,7 +42,7 @@
 - [ ] JWT authentication
 - [ ] Role-based authorization
 - [ ] Logging + exception handling
-- [ ] Config management (.env, settings)
+- [x] Config management (.env, settings)
 
 ### Phase 6 — Ledger Service
 - [ ] Search & filter transactions
@@ -114,11 +114,11 @@
 _(Append a dated bullet each session)_
 
 - 2026-07-09: Completed docs/requirements.md — defined the 3 user roles (Auditor, Finance Manager, Admin), 9 functional requirements, and 4 non-functional requirements.
+- 2026-07-10: Config management (.env, settings) completed. PostgreSQL is now running via docker-compose and verified connected.
 
 ## What's next (top priority, always keep this current)
-1. Scaffold the FastAPI backend project (Phase 5)
-2. Set up PostgreSQL + SQLAlchemy models
-3. Implement JWT authentication
+1. Create SQLAlchemy models (users, roles, transactions, vendors, departments, approval_limits, audit_flags, audit_notes, audit_cases, policies, audit_logs)
+2. Set up Alembic migrations
 
 ## Blockers / open questions
 - —
