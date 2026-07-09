@@ -2,7 +2,7 @@
 
 > Keep this file at the root of your repo. Update it at the end of every work session (ask Claude Code to do it automatically — see instructions at the bottom). This is your single source of truth across devices.
 
-**Last updated:** _(update this line each session)_
+**Last updated:** 2026-07-09
 **Current phase:** Phase 1 — Requirements Analysis
 
 ---
@@ -17,10 +17,10 @@
 ## Phase Checklist
 
 ### Phase 1 — Requirements Analysis
-- [ ] Business requirements defined
-- [ ] User roles identified (Auditor, Finance Manager, Admin)
-- [ ] Functional & non-functional requirements documented
-- [ ] Use cases written
+- [x] Business requirements defined
+- [x] User roles identified (Auditor, Finance Manager, Admin)
+- [x] Functional & non-functional requirements documented
+- [x] Use cases written
 
 ### Phase 2 — High-Level Design (HLD)
 - [ ] Architecture confirmed
@@ -113,12 +113,12 @@
 ## What's done (running log)
 _(Append a dated bullet each session)_
 
-- YYYY-MM-DD: —
+- 2026-07-09: Completed docs/requirements.md — defined the 3 user roles (Auditor, Finance Manager, Admin), 9 functional requirements, and 4 non-functional requirements.
 
 ## What's next (top priority, always keep this current)
-1. —
-2. —
-3. —
+1. Scaffold the FastAPI backend project (Phase 5)
+2. Set up PostgreSQL + SQLAlchemy models
+3. Implement JWT authentication
 
 ## Blockers / open questions
 - —
