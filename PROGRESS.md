@@ -33,15 +33,15 @@
 - [ ] API contracts drafted
 
 ### Phase 4 — Database Design
-- [ ] PostgreSQL schema implemented
-- [ ] Relationships/foreign keys set
+- [x] PostgreSQL schema implemented
+- [x] Relationships/foreign keys set
 - [ ] Seed synthetic ledger + audit data
 
 ### Phase 5 — Backend Foundation
-- [ ] FastAPI project scaffolded
+- [x] FastAPI project scaffolded
 - [ ] JWT authentication
 - [ ] Role-based authorization
-- [ ] Logging + exception handling
+- [x] Logging + exception handling
 - [x] Config management (.env, settings)
 
 ### Phase 6 — Ledger Service
@@ -115,10 +115,12 @@ _(Append a dated bullet each session)_
 
 - 2026-07-09: Completed docs/requirements.md — defined the 3 user roles (Auditor, Finance Manager, Admin), 9 functional requirements, and 4 non-functional requirements.
 - 2026-07-10: Config management (.env, settings) completed. PostgreSQL is now running via docker-compose and verified connected.
+- 2026-07-10: Created all 11 SQLAlchemy models (backend/app/models/) with relationships (transactions→vendors/departments, audit_flags→transactions, audit_notes→audit_flags, users→roles, approval_limits→departments/roles, audit_cases/policies for RAG, audit_logs as immutable append-only). Set up Alembic, generated and applied the initial migration against the docker-compose Postgres instance — verified all 11 tables created with no autogenerate drift.
 
 ## What's next (top priority, always keep this current)
-1. Create SQLAlchemy models (users, roles, transactions, vendors, departments, approval_limits, audit_flags, audit_notes, audit_cases, policies, audit_logs)
-2. Set up Alembic migrations
+1. Implement JWT authentication (Phase 5)
+2. Implement role-based authorization middleware/dependencies (Phase 5)
+3. Seed synthetic ledger + audit data for local dev/testing (Phase 4 remainder)
 
 ## Blockers / open questions
 - —
@@ -126,7 +128,11 @@ _(Append a dated bullet each session)_
 ## Key decisions log
 _(Record anything you decided that deviates from the original design doc, so future-you knows why)_
 
-- —
+- design.docx lists table names only, no columns — column design was inferred from requirements.md and the rule engine list (Phase 7) in design.docx.
+- `transactions.risk_score`/`risk_level` are denormalized columns (not computed on the fly) so ledger search/filtering by risk stays index-backed per the NFR-4 performance requirement; the rule engine (Phase 7) will write to them.
+- `audit_flags.rule_name` is a plain indexed string, not a DB enum, so new rule modules can be added without a migration.
+- `audit_notes.cited_policy_ids`/`cited_case_ids` are JSON arrays of IDs rather than join tables — keeps the explainability citation list simple; may revisit as a proper many-to-many if we need to query "which notes cite policy X" efficiently.
+- `audit_logs` has no `updated_at` and is treated as insert-only at the ORM level (NFR-2 immutability) — nothing currently enforces this at the DB level (e.g. no revoked UPDATE/DELETE grants); revisit if that becomes a compliance requirement.
 
 ---
 
