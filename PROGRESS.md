@@ -116,10 +116,11 @@ _(Append a dated bullet each session)_
 - 2026-07-09: Completed docs/requirements.md — defined the 3 user roles (Auditor, Finance Manager, Admin), 9 functional requirements, and 4 non-functional requirements.
 - 2026-07-10: Config management (.env, settings) completed. PostgreSQL is now running via docker-compose and verified connected.
 - 2026-07-10: Created all 11 SQLAlchemy models (backend/app/models/) with relationships (transactions→vendors/departments, audit_flags→transactions, audit_notes→audit_flags, users→roles, approval_limits→departments/roles, audit_cases/policies for RAG, audit_logs as immutable append-only). Set up Alembic, generated and applied the initial migration against the docker-compose Postgres instance — verified all 11 tables created with no autogenerate drift.
+- 2026-07-10: Database schema and relationships confirmed live: migration re-verified against Postgres, all 11 tables present with FKs matching the models. Seed data still outstanding — Phase 4 not fully closed.
 
 ## What's next (top priority, always keep this current)
-1. Implement JWT authentication (Phase 5)
-2. Implement role-based authorization middleware/dependencies (Phase 5)
+1. Implement JWT authentication (login endpoint, password hashing, token generation/validation)
+2. Implement role-based authorization dependencies
 3. Seed synthetic ledger + audit data for local dev/testing (Phase 4 remainder)
 
 ## Blockers / open questions
