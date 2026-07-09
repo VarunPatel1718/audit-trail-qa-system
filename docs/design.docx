@@ -1,0 +1,160 @@
+Audit Trail Q&A System for Internal Finance Teams
+One-line Pitch: An AI-assisted audit support system that scans ledger entries, detects anomalies using deterministic rules, retrieves relevant accounting policies and similar historical audit cases using RAG, and drafts explainable audit notes for internal finance teams.
+Problem Statement
+Internal audit teams manually review thousands of financial transactions to identify duplicate payments, threshold violations, suspicious vendor activity, round-number estimates, debit/credit mismatches, and other anomalies. After identifying issues, auditors must search accounting policies and previous audit reports to determine the appropriate action. This project automates the first-pass audit workflow by combining rule-based anomaly detection with Retrieval-Augmented Generation (RAG) and an MCP server for AI tool calling.
+Objectives
+• Automate anomaly detection.
+• Retrieve applicable accounting policies.
+• Retrieve similar resolved audit cases.
+• Generate explainable audit notes.
+• Provide dashboards, reports, and human review workflow.
+Technology Stack
+Frontend: React, TypeScript, Tailwind CSS, React Query
+Backend: FastAPI, SQLAlchemy, Pydantic, JWT Authentication
+Database: PostgreSQL (SQLite for development)
+Vector Database: Qdrant (or ChromaDB)
+LLM: Claude API
+Embeddings: sentence-transformers (BGE or MiniLM)
+MCP: MCP Python SDK
+Deployment: Docker, Docker Compose
+Monitoring: Prometheus, Grafana (optional)
+System Architecture
+React Dashboard
+        ↓
+FastAPI Backend
+        ↓
+Authentication + REST APIs
+        ↓
+Ledger Service | Rule Engine | RAG Service | Audit Service | MCP Server
+        ↓
+PostgreSQL + Vector Database
+        ↓
+Claude API
+        ↓
+Audit Notes & Reports
+Backend Modules
+1. Authentication & Authorization
+2. Ledger Service
+3. Rule Engine
+4. Risk Scoring Engine
+5. RAG Service
+6. Prompt Builder
+7. Audit Note Generator
+8. MCP Server
+9. Reporting Service
+10. Notification Service
+11. Admin Panel
+Rule Engine
+Implemented as independent modules:
+• Duplicate Detection
+• Threshold Violation
+• Round Number Detection
+• Debit/Credit Validation
+• Vendor-Account Pairing
+• Split Payment Detection
+• Weekend/Holiday Transactions
+• Missing Approval
+• Inactive Vendor
+• Benford's Law Analysis
+Risk Scoring
+Each rule contributes weighted points to calculate an overall risk score.
+Example:
+Duplicate = 40
+Threshold = 30
+Vendor = 15
+Weekend = 10
+Round Number = 5
+Total = 100 (Critical Risk)
+RAG Pipeline
+Policy PDFs + Audit Cases
+        ↓
+Chunking
+        ↓
+Embedding
+        ↓
+Vector Database
+        ↓
+Semantic Retrieval
+        ↓
+Claude Prompt
+        ↓
+Structured Audit Note
+Database Tables
+users
+roles
+transactions
+vendors
+departments
+approval_limits
+audit_flags
+audit_notes
+audit_cases
+policies
+audit_logs
+API Endpoints
+POST /auth/login
+GET /transactions
+GET /transactions/{id}
+POST /transactions/query
+POST /flag
+POST /audit-note
+GET /policies/search
+GET /cases/search
+GET /reports
+GET /dashboard
+MCP Tools
+query_ledger(filters)
+flag_discrepancy(transaction_id)
+generate_audit_note(transaction_id)
+retrieve_policy(query)
+retrieve_similar_cases(query)
+risk_score(transaction_id)
+export_report()
+Frontend Pages
+Login
+Dashboard
+Ledger Explorer
+Transaction Details
+Audit Workspace
+Policy Search
+Case Library
+Reports
+Admin Panel
+Complete Workflow
+1. User logs in.
+2. Dashboard displays KPIs.
+3. Auditor filters ledger.
+4. Transaction selected.
+5. Rule engine evaluates anomalies.
+6. Risk score calculated.
+7. RAG retrieves policy clauses and similar cases.
+8. Claude generates structured audit note.
+9. Auditor reviews and edits.
+10. Manager approves.
+11. Report archived with immutable audit log.
+Folder Structure
+backend/
+  app/
+    api/
+    auth/
+    models/
+    schemas/
+    services/
+    rules/
+    mcp/
+    prompts/
+    vectordb/
+frontend/
+database/
+documents/
+tests/
+docker/
+Future Enhancements
+• OCR for invoices
+• Real ERP integration (SAP/Oracle)
+• Email/Slack alerts
+• Multi-tenant support
+• Graph-based fraud detection
+• ML anomaly detection
+• Explainable AI dashboard
+• CI/CD with GitHub Actions

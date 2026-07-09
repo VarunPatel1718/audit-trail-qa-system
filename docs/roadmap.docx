@@ -1,0 +1,168 @@
+Audit Trail Q&A System for Internal Finance Teams
+Enterprise Project Blueprint & Development Roadmap
+Project Vision
+Build an enterprise-grade AI audit assistant rather than a simple RAG demo. The system should resemble software used by internal finance and audit teams, with a modular backend, secure authentication, explainable AI, and a complete audit workflow.
+Development Sequence (Recommended)
+Phase 1: Requirements Analysis
+• Define business requirements
+• Identify users (Auditor, Finance Manager, Admin)
+• Define functional & non-functional requirements
+• Create use cases
+
+Phase 2: High-Level Design (HLD)
+• Overall architecture
+• Technology stack
+• Service interactions
+• Data flow
+
+Phase 3: Low-Level Design (LLD)
+• Folder structure
+• Database schema
+• API contracts
+• Class/module design
+
+Phase 4: Database Design
+• PostgreSQL schema
+• Relationships
+• Seed synthetic ledger and audit data
+
+Phase 5: Backend Foundation
+• FastAPI project
+• JWT Authentication
+• Role-based authorization
+• Logging
+• Exception handling
+• Configuration management
+
+Phase 6: Ledger Service
+• Search & filter transactions
+• Pagination
+• Sorting
+• Validation
+
+Phase 7: Rule Engine
+• Duplicate detection
+• Threshold violations
+• Round-number detection
+• Vendor-account mismatch
+• Split payments
+• Benford's Law
+• Risk scoring
+
+Phase 8: RAG Layer
+• Chunk policy documents
+• Create embeddings
+• Store in Qdrant
+• Retrieve policies and similar audit cases
+
+Phase 9: MCP Server
+• query_ledger()
+• flag_discrepancy()
+• generate_audit_note()
+• retrieve_policy()
+• retrieve_similar_cases()
+
+Phase 10: LLM Integration
+• Prompt templates
+• Claude API
+• JSON structured outputs
+• Audit note generation
+
+Phase 11: Frontend
+• Login
+• Dashboard
+• Ledger Explorer
+• Audit Workspace
+• Policy Search
+• Reports
+• Admin Panel
+
+Phase 12: Testing
+• Unit Tests
+• Integration Tests
+• API Testing
+• RAG Evaluation
+
+Phase 13: Deployment
+• Docker
+• Docker Compose
+• Nginx
+• CI/CD
+• Monitoring
+Enterprise Architecture
+React + TypeScript Frontend
+        ↓
+FastAPI Backend
+        ↓
+Authentication Gateway
+        ↓
+Ledger Service | Rule Engine | Audit Service | RAG Service | MCP Server
+        ↓
+PostgreSQL + Qdrant
+        ↓
+Claude API
+        ↓
+Audit Notes & Reports
+Backend Modules
+Authentication
+User & Role Management
+Ledger Service
+Rule Engine
+Risk Scoring Engine
+RAG Service
+Prompt Builder
+Audit Note Generator
+MCP Server
+Notification Service
+Reporting Service
+Admin Service
+Database Tables
+users, roles, transactions, vendors, departments,
+approval_limits, audit_flags, audit_notes,
+audit_cases, accounting_policies, audit_logs
+REST APIs
+POST /auth/login
+GET /dashboard
+POST /transactions/query
+POST /transactions/flag
+POST /audit-note
+GET /policies/search
+GET /cases/search
+GET /reports
+Folder Structure
+backend/
+  app/
+    api/
+    auth/
+    models/
+    schemas/
+    services/
+    rules/
+    repositories/
+    middleware/
+    prompts/
+    mcp/
+    vectordb/
+frontend/
+database/
+documents/
+tests/
+docker/
+Future Enhancements
+ERP (SAP) integration
+OCR invoice processing
+Graph-based fraud detection
+ML anomaly detection
+Email/Slack alerts
+Versioned policies
+Multi-tenant deployment
+Prometheus & Grafana monitoring
+Milestones
+Milestone 1: Requirements & HLD
+Milestone 2: Backend & Database
+Milestone 3: Rule Engine
+Milestone 4: RAG + MCP
+Milestone 5: Frontend
+Milestone 6: Testing
+Milestone 7: Deployment
+Milestone 8: Final Demo & Documentation
