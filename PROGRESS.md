@@ -3,7 +3,7 @@
 > Keep this file at the root of your repo. Update it at the end of every work session (ask Claude Code to do it automatically — see instructions at the bottom). This is your single source of truth across devices.
 
 **Last updated:** 2026-07-10
-**Current phase:** Phase 5 — Backend Foundation
+**Current phase:** Phase 6 — Ledger Service
 
 ---
 
@@ -39,8 +39,8 @@
 
 ### Phase 5 — Backend Foundation
 - [x] FastAPI project scaffolded
-- [ ] JWT authentication
-- [ ] Role-based authorization
+- [x] JWT authentication
+- [x] Role-based authorization
 - [x] Logging + exception handling
 - [x] Config management (.env, settings)
 
@@ -117,11 +117,12 @@ _(Append a dated bullet each session)_
 - 2026-07-10: Config management (.env, settings) completed. PostgreSQL is now running via docker-compose and verified connected.
 - 2026-07-10: Created all 11 SQLAlchemy models (backend/app/models/) with relationships (transactions→vendors/departments, audit_flags→transactions, audit_notes→audit_flags, users→roles, approval_limits→departments/roles, audit_cases/policies for RAG, audit_logs as immutable append-only). Set up Alembic, generated and applied the initial migration against the docker-compose Postgres instance — verified all 11 tables created with no autogenerate drift.
 - 2026-07-10: Database schema and relationships confirmed live: migration re-verified against Postgres, all 11 tables present with FKs matching the models. Seed data still outstanding — Phase 4 not fully closed.
+- 2026-07-10: Implemented JWT authentication (Phase 5 complete). Added `POST /api/v1/auth/login` (email/password → access token) and `GET /api/v1/auth/me`; bcrypt password hashing via passlib (`app/auth/security.py`); `get_current_user` and `require_role(*role_names)` dependencies (`app/auth/dependencies.py`, case-insensitive role matching); `scripts/seed_users.py` creates one test user per role (Auditor, Finance Manager, Admin — password `ChangeMe123!`), idempotent. Added `JWT_SECRET_KEY`/`JWT_ALGORITHM`/`ACCESS_TOKEN_EXPIRE_MINUTES` to `.env`/`.env.example`. Verified end-to-end against the live server: login, `/auth/me`, wrong-password rejection, missing/garbage/expired token rejection (401), and role-based 403 rejection all confirmed working.
 
 ## What's next (top priority, always keep this current)
-1. Implement JWT authentication (login endpoint, password hashing, token generation/validation)
-2. Implement role-based authorization dependencies
-3. Seed synthetic ledger + audit data for local dev/testing (Phase 4 remainder)
+1. Ledger Service (Phase 6): search/filter/sort/paginate transactions endpoint
+2. Seed synthetic ledger + audit data for local dev/testing (Phase 4 remainder)
+3. Rule engine (Phase 7) — start with duplicate detection and threshold violation
 
 ## Blockers / open questions
 - —
@@ -134,6 +135,9 @@ _(Record anything you decided that deviates from the original design doc, so fut
 - `audit_flags.rule_name` is a plain indexed string, not a DB enum, so new rule modules can be added without a migration.
 - `audit_notes.cited_policy_ids`/`cited_case_ids` are JSON arrays of IDs rather than join tables — keeps the explainability citation list simple; may revisit as a proper many-to-many if we need to query "which notes cite policy X" efficiently.
 - `audit_logs` has no `updated_at` and is treated as insert-only at the ORM level (NFR-2 immutability) — nothing currently enforces this at the DB level (e.g. no revoked UPDATE/DELETE grants); revisit if that becomes a compliance requirement.
+- `/auth/login` accepts a JSON body (`email`/`password`) rather than OAuth2 form-encoded fields — simpler for a JSON-only API; `OAuth2PasswordBearer` is still used purely to extract the `Authorization: Bearer` header on protected routes, so Swagger's "Authorize" button still works for testing.
+- `bcrypt` pinned to `4.0.1` alongside `passlib==1.7.4` — newer bcrypt (4.1+) removed an attribute passlib's version probe reads, which breaks hashing at import time.
+- `require_role(*role_names)` matches role names case-insensitively (`casefold()`) since `roles.name` is admin-editable free text, not a fixed enum.
 
 ---
 
