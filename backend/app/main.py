@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.api.auth import router as auth_router
+from app.api.transactions import router as transactions_router
 from app.core.config import settings
 from app.core.logging import get_logger, setup_logging
 from app.db.session import engine
@@ -27,6 +28,7 @@ app.add_middleware(RequestLoggingMiddleware)
 register_exception_handlers(app)
 
 app.include_router(auth_router, prefix=settings.api_v1_prefix)
+app.include_router(transactions_router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health")

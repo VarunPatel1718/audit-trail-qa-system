@@ -19,9 +19,20 @@ def register_exception_handlers(app: FastAPI) -> None:
     async def validation_exception_handler(
         request: Request, exc: RequestValidationError
     ) -> JSONResponse:
+        # exc.errors() can carry a raw exception instance in ctx["error"] (e.g.
+        # a ValueError raised inside a @model_validator) which json.dumps can't
+        # serialize, so stringify it before it hits the response body.
+        errors = []
+        for error in exc.errors():
+            error = dict(error)
+            ctx = error.get("ctx")
+            if isinstance(ctx, dict) and "error" in ctx:
+                error["ctx"] = {**ctx, "error": str(ctx["error"])}
+            errors.append(error)
+
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            content={"detail": "Validation error", "errors": exc.errors()},
+            content={"detail": "Validation error", "errors": errors},
         )
 
     @app.exception_handler(Exception)
