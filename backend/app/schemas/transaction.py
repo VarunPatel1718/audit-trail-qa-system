@@ -29,6 +29,7 @@ class TransactionFilterParams(BaseModel):
     amount_min: Decimal | None = Field(default=None, ge=0)
     amount_max: Decimal | None = Field(default=None, ge=0)
     status: TransactionStatus | None = None
+    risk_level: RiskLevel | None = None
 
     sort_by: TransactionSortField = TransactionSortField.TRANSACTION_DATE
     sort_order: SortOrder = SortOrder.DESC

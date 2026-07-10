@@ -24,7 +24,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from sqlalchemy import select  # noqa: E402
 
+from app.core.config import settings  # noqa: E402
 from app.db.session import SessionLocal  # noqa: E402
+from app.models.audit_flag import AuditFlag  # noqa: E402
 from app.models.department import Department  # noqa: E402
 from app.models.enums import DebitCredit, TransactionStatus  # noqa: E402
 from app.models.transaction import Transaction  # noqa: E402
@@ -86,7 +88,7 @@ TARGET_TRANSACTION_COUNT = 260
 ROUND_NUMBER_COUNT = 10
 DUPLICATE_PAIR_COUNT = 6
 THRESHOLD_VIOLATION_COUNT = 8
-THRESHOLD_AMOUNT = Decimal("10000.00")  # reference point for Phase 7's threshold rule
+THRESHOLD_AMOUNT = settings.threshold_violation_amount  # same knob the Phase 7 rule engine reads
 
 ROUND_AMOUNTS = [
     Decimal("1000.00"),
@@ -134,13 +136,17 @@ def get_or_create_vendor(db, name: str, vendor_code: str, is_active: bool) -> Ve
 
 
 def clear_transactions(db) -> int:
-    """Delete all existing transactions so re-running this script is idempotent.
+    """Delete all existing transactions (and their audit_flags) so re-running
+    this script is idempotent.
 
-    A plain bulk DELETE (not TRUNCATE ... CASCADE) is used deliberately: it
-    only touches the transactions table and will raise if audit_flags/
-    audit_cases rows still reference them, rather than silently wiping
-    dependent audit data this script has no business touching.
+    audit_flags is entirely derived output of the Phase 7 rule engine (re-running
+    evaluate-all regenerates it), so it's safe to clear alongside transactions.
+    audit_cases/audit_notes are deliberately left untouched: this is a plain
+    bulk DELETE, not TRUNCATE ... CASCADE, so it will raise loudly if either of
+    those ever holds rows referencing a transaction, rather than silently
+    wiping audit data this script has no business touching.
     """
+    db.query(AuditFlag).delete()
     deleted = db.query(Transaction).delete()
     db.commit()
     return deleted

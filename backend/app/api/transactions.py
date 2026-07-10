@@ -50,6 +50,8 @@ def list_transactions(
         stmt = stmt.where(Transaction.amount <= filters.amount_max)
     if filters.status is not None:
         stmt = stmt.where(Transaction.status == filters.status)
+    if filters.risk_level is not None:
+        stmt = stmt.where(Transaction.risk_level == filters.risk_level)
 
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
 

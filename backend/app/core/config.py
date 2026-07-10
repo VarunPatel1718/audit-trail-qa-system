@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,6 +17,10 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
 
     backend_cors_origins: str = ""
+
+    # Rule engine (Phase 7)
+    threshold_violation_amount: Decimal = Decimal("10000.00")
+    duplicate_detection_window_hours: int = 24
 
     model_config = SettingsConfigDict(
         env_file=".env",
