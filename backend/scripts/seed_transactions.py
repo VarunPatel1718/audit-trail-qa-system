@@ -1,9 +1,21 @@
 """Seed vendors, departments, and exactly TARGET_TRANSACTION_COUNT synthetic
-transactions for local dev/testing, including deliberate anomalies for the
-Phase 7 rule engine to detect:
+transactions for local dev/testing, including deliberate anomalies for every
+Phase 7 rule module to detect:
   - exact duplicate payments (same vendor, amount, department, date)
   - round-number amounts (e.g. exactly 5000.00, 10000.00)
   - threshold-violating amounts (well above a typical approval threshold)
+  - debit/credit mismatches (a vendor payment recorded as a credit)
+  - vendor-account mismatches (account_number doesn't match the vendor's known account)
+  - missing approval (status implies sign-off but approved_by_id is null)
+  - split payments (several sub-threshold transactions to one vendor, close
+    together, that sum to at/above the threshold)
+  - holiday-dated transactions (weekend transactions occur naturally from the
+    random date spread, so aren't separately seeded)
+
+Baseline (non-anomalous) transactions are debit_credit=DEBIT with
+account_number matching their vendor's bank_account_number, since those are
+exactly the invariants the new rules check — anomalies are the only
+deliberate violations of them.
 
 Idempotent: vendors/departments are matched by unique code (skipped if they
 already exist). Transactions are deleted and re-inserted from scratch on every
@@ -16,7 +28,7 @@ Usage (from backend/):
 
 import random
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 
@@ -84,11 +96,23 @@ DESCRIPTIONS = [
     "Contract milestone payment",
 ]
 
-TARGET_TRANSACTION_COUNT = 260
+TARGET_TRANSACTION_COUNT = 288
 ROUND_NUMBER_COUNT = 10
 DUPLICATE_PAIR_COUNT = 6
 THRESHOLD_VIOLATION_COUNT = 8
+DEBIT_CREDIT_ANOMALY_COUNT = 6
+VENDOR_ACCOUNT_MISMATCH_COUNT = 6
+MISSING_APPROVAL_COUNT = 6
+SPLIT_PAYMENT_GROUP_COUNT = 2
+SPLIT_PAYMENT_GROUP_SIZE = 3
+HOLIDAY_ANOMALY_COUNT = 4
 THRESHOLD_AMOUNT = settings.threshold_violation_amount  # same knob the Phase 7 rule engine reads
+
+# Weekday-only holidays from the configured list (a holiday landing on a
+# weekend wouldn't isolate the weekend_holiday rule's "holiday" reason).
+HOLIDAY_ANOMALY_DATES = [d for d in sorted(settings.holidays) if d.weekday() < 5][
+    :HOLIDAY_ANOMALY_COUNT
+]
 
 ROUND_AMOUNTS = [
     Decimal("1000.00"),
@@ -183,19 +207,32 @@ def build_transaction(
     vendor: Vendor | None = None,
     department: Department | None = None,
     transaction_date: datetime | None = None,
+    debit_credit: DebitCredit = DebitCredit.DEBIT,
+    account_number: str | None = None,
+    status: TransactionStatus | None = None,
+    force_missing_approval: bool = False,
 ) -> Transaction:
+    """Baseline (all defaults) builds a "clean" transaction: DEBIT, account_number
+    matching the vendor's own bank account, and approved_by_id set whenever status
+    implies sign-off. Every anomaly block below overrides exactly the field(s) it
+    means to violate, so baseline data never false-positives on the new rules.
+    """
     vendor = vendor or random.choice(vendors)
     department = department or random.choice(departments)
     amount = amount if amount is not None else random_amount()
     transaction_date = transaction_date or random_date()
-    status = random_status()
+    status = status or random_status()
+    account_number = account_number if account_number is not None else vendor.bank_account_number
 
     created_by_id = random.choice(user_ids) if user_ids else None
-    approved_by_id = (
-        random.choice(user_ids)
-        if user_ids and status in (TransactionStatus.APPROVED, TransactionStatus.CLEARED)
-        else None
-    )
+    if force_missing_approval:
+        approved_by_id = None
+    else:
+        approved_by_id = (
+            random.choice(user_ids)
+            if user_ids and status in (TransactionStatus.APPROVED, TransactionStatus.CLEARED)
+            else None
+        )
 
     return Transaction(
         transaction_ref=ref,
@@ -203,8 +240,8 @@ def build_transaction(
         department_id=department.id,
         amount=amount,
         currency="USD",
-        debit_credit=random.choice(list(DebitCredit)),
-        account_number=f"{random.randint(10**7, 10**8 - 1)}",
+        debit_credit=debit_credit,
+        account_number=account_number,
         transaction_date=transaction_date,
         description=random.choice(DESCRIPTIONS),
         status=status,
@@ -241,7 +278,16 @@ def seed() -> None:
             ref_counter += 1
             return ref
 
-        anomaly_count = ROUND_NUMBER_COUNT + DUPLICATE_PAIR_COUNT + THRESHOLD_VIOLATION_COUNT
+        anomaly_count = (
+            ROUND_NUMBER_COUNT
+            + DUPLICATE_PAIR_COUNT
+            + THRESHOLD_VIOLATION_COUNT
+            + DEBIT_CREDIT_ANOMALY_COUNT
+            + VENDOR_ACCOUNT_MISMATCH_COUNT
+            + MISSING_APPROVAL_COUNT
+            + SPLIT_PAYMENT_GROUP_COUNT * SPLIT_PAYMENT_GROUP_SIZE
+            + len(HOLIDAY_ANOMALY_DATES)
+        )
         normal_count = TARGET_TRANSACTION_COUNT - anomaly_count
 
         transactions: list[Transaction] = [
@@ -262,9 +308,13 @@ def seed() -> None:
             )
 
         # Anomaly 2: exact duplicate payments — same vendor/department/amount/date,
-        # just a different ref, mimicking an accidental double payment.
+        # just a different ref, mimicking an accidental double payment. Sources
+        # are drawn from a frozen snapshot taken *before* this loop starts, so a
+        # duplicate clone can never itself be picked as another pair's source
+        # (which would chain pairs into an accidental triple).
+        duplicate_source_pool = list(transactions)
         for _ in range(DUPLICATE_PAIR_COUNT):
-            source = random.choice(transactions)
+            source = random.choice(duplicate_source_pool)
             transactions.append(
                 build_transaction(
                     next_ref(),
@@ -292,6 +342,91 @@ def seed() -> None:
                 )
             )
 
+        # Anomaly 4: debit/credit mismatches — a vendor payment recorded as a
+        # credit instead of the expected debit.
+        for _ in range(DEBIT_CREDIT_ANOMALY_COUNT):
+            transactions.append(
+                build_transaction(
+                    next_ref(),
+                    vendors,
+                    departments,
+                    user_ids,
+                    debit_credit=DebitCredit.CREDIT,
+                )
+            )
+
+        # Anomaly 5: vendor-account mismatches — account_number doesn't match
+        # the vendor's own bank_account_number.
+        for _ in range(VENDOR_ACCOUNT_MISMATCH_COUNT):
+            transactions.append(
+                build_transaction(
+                    next_ref(),
+                    vendors,
+                    departments,
+                    user_ids,
+                    account_number=f"WRONG{random.randint(10**6, 10**7 - 1)}",
+                )
+            )
+
+        # Anomaly 6: missing approval — status implies sign-off but no
+        # approver is on record.
+        for _ in range(MISSING_APPROVAL_COUNT):
+            transactions.append(
+                build_transaction(
+                    next_ref(),
+                    vendors,
+                    departments,
+                    user_ids,
+                    status=random.choice([TransactionStatus.APPROVED, TransactionStatus.CLEARED]),
+                    force_missing_approval=True,
+                )
+            )
+
+        # Anomaly 7: split payments — several sub-threshold transactions to
+        # the same vendor, close together, summing to at/above the threshold
+        # (structuring to dodge approval).
+        for _ in range(SPLIT_PAYMENT_GROUP_COUNT):
+            split_vendor = random.choice(vendors)
+            split_department = random.choice(departments)
+            base_date = random_date()
+            remaining = THRESHOLD_AMOUNT * Decimal("1.02")
+            for i in range(SPLIT_PAYMENT_GROUP_SIZE):
+                if i == SPLIT_PAYMENT_GROUP_SIZE - 1:
+                    chunk = remaining
+                else:
+                    share = remaining / (SPLIT_PAYMENT_GROUP_SIZE - i)
+                    jitter = Decimal(random.randint(-500, 500)) / 100
+                    chunk = (share + jitter).quantize(Decimal("0.01"))
+                    remaining -= chunk
+                transactions.append(
+                    build_transaction(
+                        next_ref(),
+                        vendors,
+                        departments,
+                        user_ids,
+                        amount=chunk,
+                        vendor=split_vendor,
+                        department=split_department,
+                        transaction_date=base_date + timedelta(hours=6 * i),
+                    )
+                )
+
+        # Anomaly 8: holiday-dated transactions (weekday holidays only, so the
+        # weekend_holiday rule's "holiday" reason is exercised distinctly from
+        # its naturally-occurring "weekend" hits).
+        for holiday_date in HOLIDAY_ANOMALY_DATES:
+            transactions.append(
+                build_transaction(
+                    next_ref(),
+                    vendors,
+                    departments,
+                    user_ids,
+                    transaction_date=datetime.combine(
+                        holiday_date, time(hour=random.randint(8, 17)), tzinfo=timezone.utc
+                    ),
+                )
+            )
+
         random.shuffle(transactions)
         db.add_all(transactions)
         db.commit()
@@ -301,6 +436,14 @@ def seed() -> None:
         print(f"  - {ROUND_NUMBER_COUNT} round-number anomalies")
         print(f"  - {DUPLICATE_PAIR_COUNT} exact-duplicate anomalies")
         print(f"  - {THRESHOLD_VIOLATION_COUNT} threshold-violating anomalies (> {THRESHOLD_AMOUNT})")
+        print(f"  - {DEBIT_CREDIT_ANOMALY_COUNT} debit/credit mismatch anomalies")
+        print(f"  - {VENDOR_ACCOUNT_MISMATCH_COUNT} vendor-account mismatch anomalies")
+        print(f"  - {MISSING_APPROVAL_COUNT} missing-approval anomalies")
+        print(
+            f"  - {SPLIT_PAYMENT_GROUP_COUNT} split-payment groups of "
+            f"{SPLIT_PAYMENT_GROUP_SIZE} ({SPLIT_PAYMENT_GROUP_COUNT * SPLIT_PAYMENT_GROUP_SIZE} transactions)"
+        )
+        print(f"  - {len(HOLIDAY_ANOMALY_DATES)} holiday-dated anomalies")
         print(f"Vendors: {len(vendors)} ({sum(1 for *_, active in VENDORS if not active)} inactive)")
         print(f"Departments: {len(departments)}")
     finally:

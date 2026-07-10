@@ -10,7 +10,13 @@ from app.models.audit_flag import AuditFlag
 from app.models.enums import FlagStatus
 from app.models.transaction import Transaction
 from app.models.user import User
-from app.schemas.rules import AuditFlagOut, BatchEvaluationOut, TransactionEvaluationOut
+from app.rules import benfords_law
+from app.schemas.rules import (
+    AuditFlagOut,
+    BatchEvaluationOut,
+    BenfordsLawOut,
+    TransactionEvaluationOut,
+)
 from app.services.risk_scoring import evaluate_transaction
 
 router = APIRouter(prefix="/transactions", tags=["rule-engine"])
@@ -45,10 +51,15 @@ def evaluate_all_transactions(
 
     db.commit()
 
+    benfords_result = benfords_law.analyze(transactions)
+
     return BatchEvaluationOut(
         evaluated_count=len(transactions),
         flagged_count=flagged_count,
         risk_level_counts=dict(risk_level_counts),
+        benfords_law=BenfordsLawOut.model_validate(benfords_result)
+        if benfords_result is not None
+        else None,
     )
 
 
