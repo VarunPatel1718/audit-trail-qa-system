@@ -8,6 +8,13 @@ from app.models.enums import FlagStatus, RiskLevel
 from app.models.transaction import Transaction
 from app.rules import ACTIVE_RULES
 
+# rule_name used for human-raised flags (e.g. via the `flag_discrepancy` MCP
+# tool). Deliberately not one of ACTIVE_RULES' names: evaluate_transaction()
+# only upserts/resolves flags whose rule_name matches an active rule module,
+# so a manual flag is never auto-resolved or silently overwritten by a later
+# evaluate-all run.
+MANUAL_FLAG_RULE_NAME = "manual"
+
 # Score bands below the design doc's "100 = Critical" example. Only duplicate
 # (40) and threshold_violation (30) exist so far, so a single hit lands in
 # MEDIUM and both together (70) lands in HIGH; CRITICAL is reserved for once
@@ -25,6 +32,37 @@ def risk_level_for_score(score: int) -> RiskLevel | None:
         if score >= band_min:
             return level
     return None
+
+
+def get_open_flags(db: Session, transaction_id: int) -> list[AuditFlag]:
+    """Fetch a transaction's currently open audit flags (any rule, including
+    manual `flag_discrepancy` flags). Shared by the rule-engine endpoints and
+    the `risk_score` MCP tool."""
+    return list(
+        db.scalars(
+            select(AuditFlag).where(
+                AuditFlag.transaction_id == transaction_id,
+                AuditFlag.status == FlagStatus.OPEN,
+            )
+        )
+    )
+
+
+def create_manual_flag(db: Session, transaction: Transaction, reason: str) -> AuditFlag:
+    """Raise a manual audit flag on a transaction (e.g. via the
+    `flag_discrepancy` MCP tool). `risk_points` is 0 -- unlike rule-engine
+    flags, this doesn't feed into `transaction.risk_score`, since that's
+    recomputed from ACTIVE_RULES alone on every evaluate-all and would
+    silently discard any points a manual flag tried to contribute."""
+    flag = AuditFlag(
+        transaction_id=transaction.id,
+        rule_name=MANUAL_FLAG_RULE_NAME,
+        risk_points=0,
+        details=reason,
+    )
+    db.add(flag)
+    db.flush()
+    return flag
 
 
 def evaluate_transaction(transaction: Transaction, db: Session) -> Transaction:
