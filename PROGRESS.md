@@ -3,7 +3,7 @@
 > Keep this file at the root of your repo. Update it at the end of every work session (ask Claude Code to do it automatically — see instructions at the bottom). This is your single source of truth across devices.
 
 **Last updated:** 2026-07-11
-**Current phase:** Phase 10 — LLM Integration (complete). `retrieve_similar_cases` (Phase 8/9) still blocked on outstanding similar-case retrieval.
+**Current phase:** Phase 10 — LLM Integration fully complete (prompt templates, Groq/Llama API integration, structured-output parsing with citation reconciliation, audit note generator service — wired into both the HTTP endpoint and the MCP tool, verified via both paths). Starting Phase 11 — Frontend next, with Login and Dashboard first.
 
 ---
 
@@ -137,11 +137,12 @@ _(Append a dated bullet each session)_
 - 2026-07-11: **Added `backend/scripts/test_mcp_client.py`** — the first real end-to-end test of the MCP server over its actual stdio transport (Phase 9's verification was in-process `FastMCP.list_tools()`/`call_tool()`, which never touched the wire protocol). Spawns `app/mcp/server.py` as a subprocess via the MCP SDK's `stdio_client`/`ClientSession` (the way a real MCP host like Claude Desktop would), lists tools, and calls `generate_audit_note` for a configurable `transaction_id` (CLI arg, defaults to 1613). Confirms the server works correctly through the real JSON-RPC framing, not just as a Python object.
 
 ## What's next (top priority, always keep this current)
-1. Phase 8/9 — `retrieve_similar_cases` MCP tool + Phase 8's similar-case retrieval it depends on (backed by the existing `audit_cases` table) — the one remaining gap in both phases.
-2. Phase 11 — Frontend: none of the pages (Login, Dashboard, Ledger Explorer, Transaction Details, Audit Workspace, Policy Search, Case Library, Reports, Admin Panel) are built yet; the entire backend (Phases 4-10) is otherwise usable via API/MCP.
+1. **Phase 11 — Frontend: start with the Login page and Dashboard**, then Ledger Explorer, Transaction Details, Audit Workspace, Policy Search, Case Library, Reports, Admin Panel. None of the frontend is built yet; the entire backend (Phases 4-10) is otherwise usable via API/MCP, so this is the critical path to a usable product.
+2. Phase 8/9 — `retrieve_similar_cases` MCP tool + Phase 8's similar-case retrieval it depends on (backed by the existing `audit_cases` table) — the one remaining backend gap, not blocking frontend work.
 3. Longer-term (not blocking): revisit `app/services/risk_scoring.py`'s risk-level score bands now that all 9 per-transaction rules can stack (max 185 points) — still monotonic and behaving sensibly per prior verification, but worth a deliberate pass once real usage patterns (not just synthetic seed data) are available.
 4. Longer-term (not blocking): retrieval for negation/threshold-style queries (e.g. "what is the threshold for X") still ranks the exact answer clause below topically-related neighbors rather than #1 — acceptable given it lands within the default top-8, but a cross-encoder reranking pass over the top-N vector-search candidates (tested `BAAI/bge-reranker-base` ad hoc; didn't clearly fix this specific case either) or hybrid BM25+vector search would be the next thing to try if this proves to matter in practice.
 5. Longer-term (not blocking): `export_report` is still a placeholder — real implementation lands whenever the Reporting Service (design.docx backend module 9) is scheduled.
+6. Longer-term (not blocking): Groq/Llama's citation-field inconsistency (see decisions log / What's done above) is mitigated with a regex backstop, not eliminated at the source — worth revisiting if it recurs in a form the regex can't catch (e.g. the model paraphrasing a policy without literally writing "policy_id=<id>").
 6. Longer-term (not blocking): the human review/approval workflow (auditor edits, Finance Manager approves/rejects, `audit_notes.status` transitions past DRAFT) isn't built yet — `generate_audit_note` only creates the initial DRAFT row.
 
 ## Blockers / open questions
