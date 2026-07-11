@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+from app.api.audit_notes import router as audit_notes_router
 from app.api.auth import router as auth_router
 from app.api.policies import router as policies_router
 from app.api.rule_engine import router as rule_engine_router
@@ -33,6 +34,7 @@ app.include_router(auth_router, prefix=settings.api_v1_prefix)
 app.include_router(transactions_router, prefix=settings.api_v1_prefix)
 app.include_router(rule_engine_router, prefix=settings.api_v1_prefix)
 app.include_router(policies_router, prefix=settings.api_v1_prefix)
+app.include_router(audit_notes_router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health")

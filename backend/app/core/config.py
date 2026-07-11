@@ -36,6 +36,15 @@ class Settings(BaseSettings):
     embedding_model_name: str = "BAAI/bge-base-en-v1.5"
     policy_search_default_top_k: int = 8
 
+    # LLM integration (Phase 10)
+    # Provider is Groq (Llama 3.3 70B), not the Claude API design.docx specifies
+    # -- switched for cost reasons (Groq free tier); see docs/requirements.md
+    # and PROGRESS.md decisions log.
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+    audit_note_max_tokens: int = 4096
+    audit_note_policy_top_k: int = 5
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

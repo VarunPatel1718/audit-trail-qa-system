@@ -20,6 +20,7 @@ from mcp.server.fastmcp import FastMCP
 from app.db.session import SessionLocal
 from app.schemas.rules import AuditFlagOut
 from app.schemas.transaction import TransactionFilterParams
+from app.services.audit_note_service import AuditNoteError, generate_audit_note as generate_audit_note_service
 from app.services.ledger_service import get_transaction_by_id, search_transactions
 from app.services.policy_search import search_policies
 from app.services.risk_scoring import create_manual_flag, get_open_flags
@@ -92,22 +93,20 @@ def flag_discrepancy(transaction_id: int, reason: str) -> dict:
 
 @mcp.tool()
 def generate_audit_note(transaction_id: int) -> dict:
-    """Draft an explainable audit note for a transaction.
+    """Draft an explainable, structured audit note for a flagged transaction.
 
-    Placeholder for Phase 9 -- actual LLM-backed drafting (Claude API +
-    prompt templates over the transaction's flags/policy citations) is built
-    in Phase 10.
+    Retrieves the transaction's open rule-engine findings and relevant policy
+    clauses, asks Claude to draft a grounded audit note (summary, reasoning,
+    risk assessment, recommended action, cited policy clauses), and persists
+    it as a DRAFT `audit_notes` row. Fails with an error dict if the
+    transaction has no open flags -- there is nothing to explain.
     """
     with SessionLocal() as db:
-        transaction = get_transaction_by_id(db, transaction_id)
-        if transaction is None:
-            return {"error": "not_found", "message": f"Transaction {transaction_id} not found"}
-
-    return {
-        "status": "not_implemented",
-        "message": "generate_audit_note is a Phase 9 placeholder; audit note drafting is built in Phase 10.",
-        "transaction_id": transaction_id,
-    }
+        try:
+            note = generate_audit_note_service(db, transaction_id)
+        except AuditNoteError as exc:
+            return {"error": exc.code, "message": exc.message}
+        return note.model_dump(mode="json")
 
 
 @mcp.tool()
