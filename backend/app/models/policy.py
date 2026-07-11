@@ -12,10 +12,12 @@ class Policy(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    document_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    document_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     version: Mapped[str | None] = mapped_column(String(20))
     source_page: Mapped[int | None] = mapped_column(Integer)
+    chapter: Mapped[str | None] = mapped_column(String(255))
+    clause_ref: Mapped[str | None] = mapped_column(String(20), index=True)
 
     uploaded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     uploaded_by: Mapped["User | None"] = relationship(foreign_keys=[uploaded_by_id])

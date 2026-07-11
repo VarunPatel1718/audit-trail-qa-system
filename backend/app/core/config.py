@@ -30,6 +30,12 @@ class Settings(BaseSettings):
         "2025-07-04,2025-11-27,2025-12-25,2026-01-01,2026-02-16,2026-05-25,2026-06-19,2026-07-04"
     )
 
+    # RAG layer (Phase 8)
+    qdrant_url: str = "http://localhost:6333"
+    qdrant_policies_collection: str = "policies"
+    embedding_model_name: str = "BAAI/bge-base-en-v1.5"
+    policy_search_default_top_k: int = 8
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
