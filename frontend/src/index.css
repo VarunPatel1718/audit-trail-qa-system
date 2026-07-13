@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+
+input:focus {
+  outline: none;
+}
+
+/*
+ * Horizontally-scrollable containers (e.g. the Dashboard's flagged-transactions
+ * table) need an always-visible scrollbar. The default OS overlay scrollbar
+ * (macOS, and Windows with "automatically hide scrollbars" on) renders as a
+ * near-invisible sliver until actively hovered/dragged, so on narrow viewports
+ * users have no visual cue that clipped columns (e.g. Amount, Risk) are
+ * reachable by scrolling at all.
+ */
+.table-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(138, 136, 120, 0.5) transparent;
+}
+.dark .table-scroll {
+  scrollbar-color: rgba(166, 176, 209, 0.45) transparent;
+}
+.table-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+.table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.table-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(138, 136, 120, 0.5);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.table-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(138, 136, 120, 0.75);
+}
+.dark .table-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(166, 176, 209, 0.45);
+}
+.dark .table-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(166, 176, 209, 0.7);
+}
