@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'IBM Plex Sans', sans-serif; }
+    a { color: #E8C877; text-decoration: none; }
+    a:hover { color: #B8860B; text-decoration: underline; }
+    input::placeholder { opacity: 0.6; }
+    input:focus { outline: none; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  </style>
+</helmet>
+
+<div style="{{ rootStyle }}">
+
+  <div style="{{ devSwitcherStyle }}">
+    <div style="{{ devTabsStyle }}">
+      <button style="{{ loginTabStyle }}" onClick="{{ goLogin }}">Login</button>
+      <button style="{{ dashboardTabStyle }}" onClick="{{ goDashboard }}">Dashboard</button>
+    </div>
+    <div style="{{ devLabelStyle }}">Executive Navy — {{ modeLabel }}</div>
+  </div>
+
+  <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+    <div style="{{ loginWrapStyle }}">
+      <div style="{{ loginCardStyle }}">
+        <button aria-label="Toggle theme" style="{{ toggleBtnStyle }}" onClick="{{ toggleTheme }}">{{ toggleGlyph }}</button>
+
+        <div style="{{ brandRowStyle }}">
+          <div style="{{ logoMarkStyle }}">
+            <div style="{{ logoInnerStyle }}"></div>
+          </div>
+          <div>
+            <div style="{{ brandTitleStyle }}">Audit Trail Q&amp;A System</div>
+            <div style="{{ brandSubStyle }}">Internal Audit &amp; Compliance Platform</div>
+          </div>
+        </div>
+
+        <div style="{{ dividerStyle }}"></div>
+
+        <form style="{{ formStyle }}" onSubmit="{{ preventSubmit }}">
+          <label style="{{ fieldLabelStyle }}">
+            Email address
+            <input type="email" placeholder="you@rbi-regulated-entity.in" style="{{ inputStyle }}" />
+          </label>
+          <label style="{{ fieldLabelStyle }}">
+            Password
+            <input type="password" placeholder="••••••••••••" style="{{ inputStyle }}" />
+          </label>
+
+          <div style="{{ rowBetweenStyle }}">
+            <label style="{{ checkboxRowStyle }}">
+              <input type="checkbox" style="{{ checkboxStyle }}" />
+              Remember this device
+            </label>
+            <a href="#" style="{{ forgotLinkStyle }}">Forgot password?</a>
+          </div>
+
+          <button style="{{ primaryBtnStyle }}" onClick="{{ goDashboard }}">Sign in</button>
+        </form>
+
+        <div style="{{ secureNoticeStyle }}">
+          <span style="{{ dotStyle }}"></span>
+          Access is logged and monitored per RBI audit &amp; compliance guidelines
+        </div>
+      </div>
+
+      <div style="{{ loginFooterStyle }}">© 2026 Audit Trail Q&amp;A System · Role-based access · Auditor / Finance Manager / Admin</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ appShellStyle }}">
+
+      <div style="{{ sidebarStyle }}">
+        <div style="{{ sidebarBrandStyle }}">
+          <div style="{{ logoMarkSmallStyle }}"><div style="{{ logoInnerSmallStyle }}"></div></div>
+          <div style="{{ sidebarBrandTextStyle }}">Audit Trail<br/>Q&amp;A System</div>
+        </div>
+        <div style="{{ navListStyle }}">
+          <sc-for list="{{ navItems }}" as="item" hint-placeholder-count="5">
+            <div style="{{ item.itemStyle }}">
+              <span style="{{ item.dotStyle }}"></span>
+              {{ item.label }}
+            </div>
+          </sc-for>
+        </div>
+        <div style="{{ sidebarFooterStyle }}">
+          <div style="{{ roleTagStyle }}">Auditor</div>
+          <div style="{{ userNameStyle }}">R. Deshmukh</div>
+        </div>
+      </div>
+
+      <div style="{{ mainColStyle }}">
+        <div style="{{ headerStyle }}">
+          <div>
+            <div style="{{ pageTitleStyle }}">Dashboard</div>
+            <div style="{{ pageSubStyle }}">Overview of flagged transactions and audit activity</div>
+          </div>
+          <div style="{{ headerRightStyle }}">
+            <button aria-label="Toggle theme" style="{{ toggleBtnHeaderStyle }}" onClick="{{ toggleTheme }}">{{ toggleGlyph }}</button>
+            <div style="{{ avatarStyle }}">RD</div>
+          </div>
+        </div>
+
+        <div style="{{ statsRowStyle }}">
+          <sc-for list="{{ statCards }}" as="stat" hint-placeholder-count="3">
+            <div style="{{ statCardStyle }}">
+              <div style="{{ statLabelStyle }}">{{ stat.label }}</div>
+              <div style="{{ statValueStyle }}">{{ stat.value }}</div>
+              <div style="{{ stat.metaStyle }}">{{ stat.meta }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="{{ tableCardStyle }}">
+          <div style="{{ tableHeaderRowStyle }}">
+            <div style="{{ tableTitleStyle }}">Recent Flagged Transactions</div>
+            <a href="#" style="{{ viewAllStyle }}">View all →</a>
+          </div>
+
+          <div style="{{ tableGridStyle }}">
+            <div style="{{ tableHeadCellStyle }}">Ref</div>
+            <div style="{{ tableHeadCellStyle }}">Vendor</div>
+            <div style="{{ tableHeadCellStyle }}">Department</div>
+            <div style="{{ tableHeadCellRightStyle }}">Amount (₹)</div>
+            <div style="{{ tableHeadCellStyle }}">Risk</div>
+
+            <sc-for list="{{ transactions }}" as="tx" hint-placeholder-count="6">
+              <div style="{{ tableCellMonoStyle }}">{{ tx.ref }}</div>
+              <div style="{{ tableCellStyle }}">{{ tx.vendor }}</div>
+              <div style="{{ tableCellMutedStyle }}">{{ tx.dept }}</div>
+              <div style="{{ tableCellMonoRightStyle }}">{{ tx.amount }}</div>
+              <div style="{{ tableCellStyle }}"><span style="{{ tx.riskStyle }}">{{ tx.risk }}</span></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    theme: 'dark',
+    screen: 'login',
+  };
+
+  toggleTheme = () => this.setState(s => ({ theme: s.theme === 'dark' ? 'light' : 'dark' }));
+  goLogin = () => this.setState({ screen: 'login' });
+  goDashboard = (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ screen: 'dashboard' }); };
+  preventSubmit = (e) => { e.preventDefault(); this.setState({ screen: 'dashboard' }); };
+
+  renderVals() {
+    const dark = this.state.theme === 'dark';
+    const t = dark ? {
+      bg: '#0A0F1C',
+      cardBg: 'rgba(255,255,255,0.03)',
+      cardBorder: 'rgba(255,255,255,0.08)',
+      text: '#CBD5E1',
+      textHi: '#F1F5F9',
+      muted: '#5B6685',
+      gold: '#E8C877',
+      inputBg: 'rgba(255,255,255,0.04)',
+      inputBorder: 'rgba(255,255,255,0.10)',
+      divider: 'rgba(255,255,255,0.08)',
+      sidebarBg: 'rgba(255,255,255,0.02)',
+      shellBg: '#0A0F1C',
+      shadow: '0 24px 60px -20px rgba(0,0,0,0.6)',
+    } : {
+      bg: '#F7F5EF',
+      cardBg: '#FFFFFF',
+      cardBorder: '#E8E4D8',
+      text: '#1E2438',
+      textHi: '#12162A',
+      muted: '#8A8878',
+      gold: '#B8860B',
+      inputBg: '#FBFAF6',
+      inputBorder: '#E8E4D8',
+      divider: '#E8E4D8',
+      sidebarBg: '#FFFFFF',
+      shellBg: '#F7F5EF',
+      shadow: '0 20px 44px -24px rgba(30,36,56,0.14)',
+    };
+
+    const sans = "'IBM Plex Sans', sans-serif";
+    const mono = "'IBM Plex Mono', monospace";
+
+    const badgeColors = dark ? {
+      critical: { bg: 'rgba(226,75,74,0.14)', border: 'rgba(226,75,74,0.4)', text: '#F0827E' },
+      high:     { bg: 'rgba(232,200,119,0.14)', border: 'rgba(232,200,119,0.4)', text: '#E8C877' },
+      medium:   { bg: 'rgba(91,102,133,0.20)', border: 'rgba(91,102,133,0.45)', text: '#A6B0D1' },
+      low:      { bg: 'rgba(107,153,130,0.16)', border: 'rgba(107,153,130,0.4)', text: '#8FCBAA' },
+    } : {
+      critical: { bg: 'rgba(178,58,58,0.08)', border: 'rgba(178,58,58,0.3)', text: '#B23A3A' },
+      high:     { bg: 'rgba(184,134,11,0.10)', border: 'rgba(184,134,11,0.35)', text: '#8A6508' },
+      medium:   { bg: 'rgba(91,102,133,0.10)', border: 'rgba(91,102,133,0.3)', text: '#5B6685' },
+      low:      { bg: 'rgba(79,122,94,0.10)', border: 'rgba(79,122,94,0.3)', text: '#4F7A5E' },
+    };
+
+    const badgeStyle = (risk) => {
+      const c = badgeColors[(risk || 'low').toLowerCase()] || badgeColors.low;
+      return {
+        display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 999,
+        fontFamily: sans, fontSize: 12, fontWeight: 600, letterSpacing: '0.02em',
+        textTransform: 'capitalize', background: c.bg, border: `1px solid ${c.border}`, color: c.text,
+      };
+    };
+
+    const navItemStyle = (active) => ({
+      display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: 8,
+      fontFamily: sans, fontSize: 14, fontWeight: active ? 600 : 500,
+      color: active ? t.gold : t.text, background: active ? (dark ? 'rgba(232,200,119,0.08)' : 'rgba(184,134,11,0.06)') : 'transparent',
+      cursor: 'pointer',
+    });
+    const navDotStyle = (active) => ({
+      width: 6, height: 6, borderRadius: '50%', background: active ? t.gold : t.muted, flexShrink: 0,
+    });
+
+    const navItems = [
+      { label: 'Dashboard', active: true },
+      { label: 'Ledger', active: false },
+      { label: 'Audit Notes', active: false },
+      { label: 'Reports', active: false },
+      { label: 'Admin', active: false },
+    ].map(n => ({ ...n, itemStyle: navItemStyle(n.active), dotStyle: navDotStyle(n.active) }));
+
+    const statMetaStyleFn = (tone) => ({
+      fontFamily: sans, fontSize: 12.5, marginTop: 6,
+      color: tone === 'up' ? badgeColors.critical.text : tone === 'down' ? '#8FCBAA' : t.muted,
+    });
+
+    const statCards = [
+      { label: 'Flagged Transactions', value: '128', meta: '+14 this week', tone: 'up' },
+      { label: 'Avg Risk Score', value: '62.4', meta: 'Medium-High band', tone: 'flat' },
+      { label: 'Notes Drafted', value: '73', meta: '55 pending review', tone: 'down' },
+    ].map(s => ({ ...s, metaStyle: statMetaStyleFn(s.tone) }));
+
+    const transactions = [
+      { ref: 'TXN-88213', vendor: 'Meridian Logistics', dept: 'Procurement', amount: '18,42,000', risk: 'Critical' },
+      { ref: 'TXN-88207', vendor: 'Kavya Textiles Pvt Ltd', dept: 'Vendor Payments', amount: '6,75,500', risk: 'High' },
+      { ref: 'TXN-88194', vendor: 'Orbit IT Services', dept: 'IT Infrastructure', amount: '2,10,000', risk: 'Medium' },
+      { ref: 'TXN-88181', vendor: 'Shree Balaji Traders', dept: 'Procurement', amount: '9,88,250', risk: 'High' },
+      { ref: 'TXN-88176', vendor: 'Nandan Freight Corp', dept: 'Logistics', amount: '4,20,000', risk: 'Low' },
+      { ref: 'TXN-88169', vendor: 'Aravali Consulting', dept: 'Advisory', amount: '12,05,000', risk: 'Critical' },
+    ].map(tx => ({ ...tx, riskStyle: badgeStyle(tx.risk) }));
+
+    return {
+      isLogin: this.state.screen === 'login',
+      isDashboard: this.state.screen === 'dashboard',
+      modeLabel: dark ? 'Dark' : 'Light',
+      toggleTheme: this.toggleTheme,
+      goLogin: this.goLogin,
+      goDashboard: this.goDashboard,
+      preventSubmit: this.preventSubmit,
+      toggleGlyph: dark ? '☀' : '☾',
+
+      rootStyle: {
+        minHeight: '100vh', width: '100%', background: t.bg, fontFamily: sans,
+        transition: 'background 0.2s ease', position: 'relative',
+      },
+
+      devSwitcherStyle: {
+        position: 'fixed', top: 14, right: 14, zIndex: 50, display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end',
+      },
+      devTabsStyle: {
+        display: 'flex', gap: 4, padding: 4, borderRadius: 10,
+        background: dark ? 'rgba(255,255,255,0.06)' : '#FFFFFF', border: `1px solid ${t.cardBorder}`,
+        backdropFilter: 'blur(8px)',
+      },
+      loginTabStyle: {
+        border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 7,
+        fontFamily: sans, fontSize: 12.5, fontWeight: 600,
+        background: this.state.screen === 'login' ? t.gold : 'transparent',
+        color: this.state.screen === 'login' ? (dark ? '#14151C' : '#FFFFFF') : t.muted,
+      },
+      dashboardTabStyle: {
+        border: 'none', cursor: 'pointer', padding: '6px 12px', borderRadius: 7,
+        fontFamily: sans, fontSize: 12.5, fontWeight: 600,
+        background: this.state.screen === 'dashboard' ? t.gold : 'transparent',
+        color: this.state.screen === 'dashboard' ? (dark ? '#14151C' : '#FFFFFF') : t.muted,
+      },
+      devLabelStyle: { fontFamily: mono, fontSize: 10.5, color: t.muted, paddingLeft: 4, letterSpacing: '0.03em' },
+
+      // LOGIN
+      loginWrapStyle: {
+        minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: 24,
+      },
+      loginCardStyle: {
+        width: 420, background: t.cardBg, border: `1px solid ${t.cardBorder}`, borderRadius: 14,
+        backdropFilter: 'blur(14px)', boxShadow: t.shadow, padding: '36px 32px', position: 'relative',
+      },
+      toggleBtnStyle: {
+        position: 'absolute', top: 20, right: 20, width: 34, height: 34, borderRadius: '50%',
+        border: `1px solid ${t.cardBorder}`, background: dark ? 'rgba(255,255,255,0.04)' : '#FBFAF6',
+        color: t.gold, fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      },
+      brandRowStyle: { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4, marginTop: 4 },
+      logoMarkStyle: {
+        width: 42, height: 42, borderRadius: 10, background: dark ? 'rgba(232,200,119,0.12)' : 'rgba(184,134,11,0.10)',
+        border: `1px solid ${dark ? 'rgba(232,200,119,0.35)' : 'rgba(184,134,11,0.3)'}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      },
+      logoInnerStyle: { width: 16, height: 16, borderRadius: 4, background: t.gold },
+      brandTitleStyle: { fontFamily: sans, fontSize: 16.5, fontWeight: 700, color: t.textHi, letterSpacing: '-0.01em' },
+      brandSubStyle: { fontFamily: sans, fontSize: 12.5, color: t.muted, marginTop: 2 },
+
+      dividerStyle: { height: 1, background: t.divider, margin: '22px 0' },
+
+      formStyle: { display: 'flex', flexDirection: 'column', gap: 16 },
+      fieldLabelStyle: { display: 'flex', flexDirection: 'column', gap: 7, fontFamily: sans, fontSize: 12.5, fontWeight: 600, color: t.muted, letterSpacing: '0.01em' },
+      inputStyle: {
+        fontFamily: sans, fontSize: 14.5, color: t.textHi, background: t.inputBg,
+        border: `1px solid ${t.inputBorder}`, borderRadius: 8, padding: '10px 12px', width: '100%',
+      },
+      rowBetweenStyle: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: -2 },
+      checkboxRowStyle: { display: 'flex', alignItems: 'center', gap: 7, fontFamily: sans, fontSize: 12.5, color: t.muted, fontWeight: 500 },
+      checkboxStyle: { width: 14, height: 14, accentColor: t.gold },
+      forgotLinkStyle: { fontFamily: sans, fontSize: 12.5, fontWeight: 600, color: t.gold },
+
+      primaryBtnStyle: {
+        marginTop: 6, padding: '11px 0', borderRadius: 8, border: 'none', cursor: 'pointer',
+        background: t.gold, color: dark ? '#14151C' : '#FFFFFF', fontFamily: sans, fontWeight: 700, fontSize: 14.5,
+        letterSpacing: '0.01em',
+      },
+      secureNoticeStyle: {
+        marginTop: 22, display: 'flex', alignItems: 'center', gap: 8, fontFamily: sans, fontSize: 11.5,
+        color: t.muted, lineHeight: 1.4,
+      },
+      dotStyle: { width: 6, height: 6, borderRadius: '50%', background: dark ? '#6FCF97' : '#4F7A5E', flexShrink: 0 },
+
+      loginFooterStyle: { fontFamily: sans, fontSize: 11.5, color: t.muted, letterSpacing: '0.01em' },
+
+      // DASHBOARD
+      appShellStyle: { display: 'flex', minHeight: '100vh', background: t.shellBg },
+      sidebarStyle: {
+        width: 216, flexShrink: 0, background: t.sidebarBg, borderRight: `1px solid ${t.cardBorder}`,
+        display: 'flex', flexDirection: 'column', padding: '22px 16px', gap: 26,
+      },
+      sidebarBrandStyle: { display: 'flex', alignItems: 'center', gap: 10, padding: '0 4px' },
+      logoMarkSmallStyle: {
+        width: 32, height: 32, borderRadius: 8, background: dark ? 'rgba(232,200,119,0.12)' : 'rgba(184,134,11,0.10)',
+        border: `1px solid ${dark ? 'rgba(232,200,119,0.35)' : 'rgba(184,134,11,0.3)'}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      },
+      logoInnerSmallStyle: { width: 12, height: 12, borderRadius: 3, background: t.gold },
+      sidebarBrandTextStyle: { fontFamily: sans, fontSize: 12.5, fontWeight: 700, color: t.textHi, lineHeight: 1.3 },
+      navListStyle: { display: 'flex', flexDirection: 'column', gap: 2, flex: 1 },
+      navItemStyle,
+      navDotStyle,
+      sidebarFooterStyle: { padding: '12px 4px 0', borderTop: `1px solid ${t.cardBorder}`, display: 'flex', flexDirection: 'column', gap: 3 },
+      roleTagStyle: { fontFamily: sans, fontSize: 11, fontWeight: 700, color: t.gold, letterSpacing: '0.04em', textTransform: 'uppercase' },
+      userNameStyle: { fontFamily: sans, fontSize: 13, color: t.text, fontWeight: 500 },
+
+      mainColStyle: { flex: 1, padding: '28px 36px 40px', display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 },
+      headerStyle: { display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' },
+      pageTitleStyle: { fontFamily: sans, fontSize: 26, fontWeight: 700, color: t.textHi, letterSpacing: '-0.01em' },
+      pageSubStyle: { fontFamily: sans, fontSize: 13.5, color: t.muted, marginTop: 4 },
+      headerRightStyle: { display: 'flex', alignItems: 'center', gap: 14 },
+      toggleBtnHeaderStyle: {
+        width: 36, height: 36, borderRadius: '50%', border: `1px solid ${t.cardBorder}`,
+        background: t.cardBg, color: t.gold, fontSize: 15.5, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      },
+      avatarStyle: {
+        width: 36, height: 36, borderRadius: '50%', background: dark ? 'rgba(232,200,119,0.16)' : 'rgba(184,134,11,0.12)',
+        color: t.gold, fontFamily: sans, fontWeight: 700, fontSize: 12.5,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      },
+
+      statsRowStyle: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 },
+      statCards,
+      statCardStyle: {
+        background: t.cardBg, border: `1px solid ${t.cardBorder}`, borderRadius: 12, backdropFilter: 'blur(14px)',
+        padding: '20px 22px', boxShadow: t.shadow,
+      },
+      statLabelStyle: { fontFamily: sans, fontSize: 12.5, fontWeight: 600, color: t.muted, letterSpacing: '0.01em' },
+      statValueStyle: { fontFamily: mono, fontSize: 30, fontWeight: 600, color: t.gold, marginTop: 10, letterSpacing: '-0.01em' },
+
+      tableCardStyle: {
+        background: t.cardBg, border: `1px solid ${t.cardBorder}`, borderRadius: 12, backdropFilter: 'blur(14px)',
+        boxShadow: t.shadow, overflow: 'hidden',
+      },
+      tableHeaderRowStyle: {
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '18px 22px', borderBottom: `1px solid ${t.divider}`,
+      },
+      tableTitleStyle: { fontFamily: sans, fontSize: 15.5, fontWeight: 700, color: t.textHi },
+      viewAllStyle: { fontFamily: sans, fontSize: 12.5, fontWeight: 600, color: t.gold },
+
+      tableGridStyle: {
+        display: 'grid', gridTemplateColumns: '120px 1.4fr 1.1fr 140px 100px',
+        columnGap: 16, rowGap: 0, padding: '4px 22px 14px',
+      },
+      tableHeadCellStyle: {
+        fontFamily: sans, fontSize: 11.5, fontWeight: 700, color: t.muted, textTransform: 'uppercase',
+        letterSpacing: '0.05em', padding: '12px 0 10px', borderBottom: `1px solid ${t.divider}`,
+      },
+      tableHeadCellRightStyle: {
+        fontFamily: sans, fontSize: 11.5, fontWeight: 700, color: t.muted, textTransform: 'uppercase',
+        letterSpacing: '0.05em', padding: '12px 0 10px', borderBottom: `1px solid ${t.divider}`, textAlign: 'right',
+      },
+      tableCellStyle: { fontFamily: sans, fontSize: 13.5, color: t.text, padding: '14px 0', borderBottom: `1px solid ${t.divider}`, display: 'flex', alignItems: 'center' },
+      tableCellMutedStyle: { fontFamily: sans, fontSize: 13, color: t.muted, padding: '14px 0', borderBottom: `1px solid ${t.divider}`, display: 'flex', alignItems: 'center' },
+      tableCellMonoStyle: { fontFamily: mono, fontSize: 13, color: t.text, padding: '14px 0', borderBottom: `1px solid ${t.divider}`, display: 'flex', alignItems: 'center' },
+      tableCellMonoRightStyle: { fontFamily: mono, fontSize: 13.5, color: t.textHi, padding: '14px 0', borderBottom: `1px solid ${t.divider}`, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' },
+      badgeStyle,
+      transactions,
+      navItems,
+    };
+  }
+}
+
+</script>
+</body>
+</html>
