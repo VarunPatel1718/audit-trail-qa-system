@@ -21,6 +21,23 @@ class TransactionEvaluationOut(BaseModel):
     flags: list[AuditFlagOut]
 
 
+class TransactionFlagsOut(BaseModel):
+    """Read-only counterpart to TransactionEvaluationOut -- same shape, but
+    served from whatever's already in the DB instead of re-running the rule
+    engine. `evaluated` distinguishes "never evaluated" from "evaluated and
+    found nothing" -- both currently look identical on the transaction row
+    itself (risk_score=0, no open flags), since there's no evaluated_at
+    column; this is approximated as "has this transaction ever had any
+    audit_flags row at all, open or resolved."""
+
+    transaction_id: int
+    transaction_ref: str
+    risk_score: int
+    risk_level: RiskLevel | None
+    evaluated: bool
+    flags: list[AuditFlagOut]
+
+
 class BenfordsLawOut(BaseModel):
     sample_size: int
     observed_frequencies: dict[int, float]

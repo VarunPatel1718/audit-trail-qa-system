@@ -1,5 +1,12 @@
+import axios from 'axios'
 import { apiClient } from './apiClient'
-import type { PaginatedTransactions, TransactionDetail, TransactionQueryParams } from '../types/api'
+import type {
+  AuditNote,
+  PaginatedTransactions,
+  TransactionDetail,
+  TransactionFlags,
+  TransactionQueryParams,
+} from '../types/api'
 
 export async function fetchTransactions(params: TransactionQueryParams): Promise<PaginatedTransactions> {
   const { data } = await apiClient.get<PaginatedTransactions>('/transactions', { params })
@@ -8,6 +15,29 @@ export async function fetchTransactions(params: TransactionQueryParams): Promise
 
 export async function fetchTransactionDetail(id: number): Promise<TransactionDetail> {
   const { data } = await apiClient.get<TransactionDetail>(`/transactions/${id}`)
+  return data
+}
+
+export async function fetchTransactionFlags(id: number): Promise<TransactionFlags> {
+  const { data } = await apiClient.get<TransactionFlags>(`/transactions/${id}/flags`)
+  return data
+}
+
+/** Returns null (not an error) when no note exists yet -- a 404 here is an
+ * expected, common state the caller checks to decide whether to show a
+ * "Generate" button, not a failure. */
+export async function fetchAuditNote(id: number): Promise<AuditNote | null> {
+  try {
+    const { data } = await apiClient.get<AuditNote>(`/transactions/${id}/audit-note`)
+    return data
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 404) return null
+    throw err
+  }
+}
+
+export async function generateAuditNote(id: number): Promise<AuditNote> {
+  const { data } = await apiClient.post<AuditNote>(`/transactions/${id}/generate-audit-note`)
   return data
 }
 

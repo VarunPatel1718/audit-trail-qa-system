@@ -1,11 +1,12 @@
 from collections import Counter
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
 from app.db.session import get_db
+from app.models.audit_flag import AuditFlag
 from app.models.transaction import Transaction
 from app.models.user import User
 from app.rules import benfords_law
@@ -14,6 +15,7 @@ from app.schemas.rules import (
     BatchEvaluationOut,
     BenfordsLawOut,
     TransactionEvaluationOut,
+    TransactionFlagsOut,
 )
 from app.services.risk_scoring import evaluate_transaction, get_open_flags
 
@@ -73,5 +75,41 @@ def evaluate_single_transaction(
         transaction_ref=transaction.transaction_ref,
         risk_score=transaction.risk_score,
         risk_level=transaction.risk_level,
+        flags=[AuditFlagOut.model_validate(flag) for flag in get_open_flags(db, transaction.id)],
+    )
+
+
+@router.get("/{transaction_id}/flags", response_model=TransactionFlagsOut)
+def get_transaction_flags(
+    transaction_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> TransactionFlagsOut:
+    """Read-only: returns whatever's already in the DB, never calls
+    evaluate_transaction() or writes anything."""
+    transaction = db.scalars(
+        select(Transaction).where(Transaction.id == transaction_id)
+    ).first()
+
+    if transaction is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found"
+        )
+
+    has_flag_history = (
+        db.scalar(
+            select(func.count())
+            .select_from(AuditFlag)
+            .where(AuditFlag.transaction_id == transaction_id)
+        )
+        or 0
+    ) > 0
+
+    return TransactionFlagsOut(
+        transaction_id=transaction.id,
+        transaction_ref=transaction.transaction_ref,
+        risk_score=transaction.risk_score,
+        risk_level=transaction.risk_level,
+        evaluated=has_flag_history,
         flags=[AuditFlagOut.model_validate(flag) for flag in get_open_flags(db, transaction.id)],
     )

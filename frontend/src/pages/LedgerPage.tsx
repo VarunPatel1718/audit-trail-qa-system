@@ -1,4 +1,5 @@
 import { Fragment, type FormEvent, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Sidebar } from '../components/Sidebar'
 import { ThemeToggle } from '../components/ThemeToggle'
@@ -386,8 +387,13 @@ export function LedgerPage() {
 
                 {items.map((tx) => (
                   <Fragment key={tx.id}>
-                    <div className="flex items-center border-b border-divider-light py-3.5 font-mono text-[13px] text-body-light dark:border-divider-dark dark:text-body-dark">
-                      {tx.transaction_ref}
+                    <div className="flex items-center border-b border-divider-light py-3.5 font-mono text-[13px] dark:border-divider-dark">
+                      <Link
+                        to={`/transactions/${tx.id}`}
+                        className="text-body-light hover:text-gold-light hover:underline dark:text-body-dark dark:hover:text-gold-dark"
+                      >
+                        {tx.transaction_ref}
+                      </Link>
                     </div>
                     <div className="flex items-center border-b border-divider-light py-3.5 font-sans text-[13.5px] text-body-light dark:border-divider-dark dark:text-body-dark">
                       {vendorName(tx.vendor_id)}

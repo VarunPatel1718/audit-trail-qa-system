@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { LoginPage } from './pages/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LedgerPage } from './pages/LedgerPage'
+import { TransactionDetailsPage } from './pages/TransactionDetailsPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
@@ -21,6 +22,14 @@ function App() {
         element={
           <ProtectedRoute>
             <LedgerPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/transactions/:id"
+        element={
+          <ProtectedRoute>
+            <TransactionDetailsPage />
           </ProtectedRoute>
         }
       />

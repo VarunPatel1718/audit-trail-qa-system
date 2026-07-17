@@ -18,6 +18,7 @@ import json
 import re
 
 from pydantic import ValidationError
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -29,7 +30,7 @@ from app.schemas.audit_note import AuditNoteDraft, AuditNoteOut
 from app.schemas.policy import PolicySearchResult
 from app.services.groq_client import get_groq_client
 from app.services.ledger_service import get_transaction_by_id
-from app.services.policy_search import search_policies
+from app.services.policy_search import get_policies_by_ids, search_policies
 from app.services.risk_scoring import get_open_flags
 
 _AUDIT_NOTE_TOOL_NAME = "submit_audit_note"
@@ -73,6 +74,74 @@ def _compose_content(draft: AuditNoteDraft) -> str:
         f"Reasoning: {draft.reasoning}\n\n"
         f"Risk Assessment: {draft.risk_assessment}\n\n"
         f"Recommended Action: {draft.recommended_action}"
+    )
+
+
+# Inverse of _compose_content()'s fixed template, used only by the read-only
+# get_latest_audit_note() below to give GET /transactions/{id}/audit-note the
+# same response shape as the generation endpoint (which has summary/
+# reasoning/risk_assessment/recommended_action as separate fields on the LLM
+# draft) even though only the composed `content` string is actually
+# persisted on the AuditNote row.
+_CONTENT_SECTIONS_RE = re.compile(
+    r"^Summary: (?P<summary>.*?)\n\n"
+    r"Reasoning: (?P<reasoning>.*?)\n\n"
+    r"Risk Assessment: (?P<risk_assessment>.*?)\n\n"
+    r"Recommended Action: (?P<recommended_action>.*)$",
+    re.DOTALL,
+)
+
+
+def _parse_content(content: str) -> tuple[str, str, str, str]:
+    match = _CONTENT_SECTIONS_RE.match(content)
+    if match is None:
+        # Row doesn't match the expected format (e.g. a future hand-edited
+        # note) -- degrade gracefully rather than 500ing the read endpoint.
+        return content, "", "", ""
+    return (
+        match.group("summary"),
+        match.group("reasoning"),
+        match.group("risk_assessment"),
+        match.group("recommended_action"),
+    )
+
+
+def get_latest_audit_note(db: Session, transaction_id: int) -> AuditNoteOut | None:
+    """Read-only: returns the most recently generated audit note for a
+    transaction, if one exists. Never calls the LLM and never writes
+    anything -- unlike generate_audit_note(), which has no idempotency check
+    yet (see PROGRESS.md), so more than one note can already exist for the
+    same transaction; this picks the most recent by created_at (ties broken
+    by highest id) rather than surfacing every duplicate."""
+    note = db.scalars(
+        select(AuditNote)
+        .join(AuditFlag, AuditNote.audit_flag_id == AuditFlag.id)
+        .where(AuditFlag.transaction_id == transaction_id)
+        .order_by(AuditNote.created_at.desc(), AuditNote.id.desc())
+        .limit(1)
+    ).first()
+
+    if note is None:
+        return None
+
+    summary, reasoning, risk_assessment, recommended_action = _parse_content(note.content)
+
+    cited_policy_ids = note.cited_policy_ids or []
+    cited_policies = get_policies_by_ids(db, cited_policy_ids) if cited_policy_ids else []
+
+    return AuditNoteOut(
+        id=note.id,
+        transaction_id=transaction_id,
+        audit_flag_id=note.audit_flag_id,
+        status=note.status,
+        created_by_id=note.created_by_id,
+        summary=summary,
+        reasoning=reasoning,
+        risk_assessment=risk_assessment,
+        recommended_action=recommended_action,
+        content=note.content,
+        cited_policy_ids=cited_policy_ids,
+        cited_policies=cited_policies,
     )
 
 

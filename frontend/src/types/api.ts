@@ -1,6 +1,8 @@
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical'
 export type TransactionStatus = 'pending' | 'approved' | 'rejected' | 'flagged' | 'cleared'
 export type DebitCredit = 'debit' | 'credit'
+export type FlagStatus = 'open' | 'resolved' | 'dismissed'
+export type AuditNoteStatus = 'draft' | 'submitted' | 'approved' | 'rejected'
 
 export interface LoginRequest {
   email: string
@@ -63,6 +65,49 @@ export interface PaginatedTransactions {
   page: number
   page_size: number
   total_pages: number
+}
+
+export interface AuditFlag {
+  id: number
+  rule_name: string
+  risk_points: number
+  details: string | null
+  status: FlagStatus
+}
+
+export interface TransactionFlags {
+  transaction_id: number
+  transaction_ref: string
+  risk_score: number
+  risk_level: RiskLevel | null
+  evaluated: boolean
+  flags: AuditFlag[]
+}
+
+export interface PolicySearchResult {
+  policy_id: number
+  score: number
+  document_name: string
+  title: string
+  chapter: string | null
+  clause_ref: string | null
+  source_page: number | null
+  content: string
+}
+
+export interface AuditNote {
+  id: number
+  transaction_id: number
+  audit_flag_id: number
+  status: AuditNoteStatus
+  created_by_id: number | null
+  summary: string
+  reasoning: string
+  risk_assessment: string
+  recommended_action: string
+  content: string
+  cited_policy_ids: number[]
+  cited_policies: PolicySearchResult[]
 }
 
 export interface TransactionQueryParams {
