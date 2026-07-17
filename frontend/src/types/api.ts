@@ -95,6 +95,11 @@ export interface PolicySearchResult {
   content: string
 }
 
+export interface PolicySearchResponse {
+  query: string
+  results: PolicySearchResult[]
+}
+
 export interface AuditNote {
   id: number
   transaction_id: number

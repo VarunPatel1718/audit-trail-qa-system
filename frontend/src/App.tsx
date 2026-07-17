@@ -4,6 +4,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { LedgerPage } from './pages/LedgerPage'
 import { TransactionDetailsPage } from './pages/TransactionDetailsPage'
 import { AuditWorkspacePage } from './pages/AuditWorkspacePage'
+import { PolicySearchPage } from './pages/PolicySearchPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
@@ -39,6 +40,14 @@ function App() {
         element={
           <ProtectedRoute>
             <AuditWorkspacePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/policy-search"
+        element={
+          <ProtectedRoute>
+            <PolicySearchPage />
           </ProtectedRoute>
         }
       />
