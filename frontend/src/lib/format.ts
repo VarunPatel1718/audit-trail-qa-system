@@ -7,3 +7,10 @@ export function formatCurrency(amount: string | number, currency: string): strin
     return `${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`
   }
 }
+
+export function formatDate(value: string): string {
+  return new Date(value).toLocaleString('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  })
+}

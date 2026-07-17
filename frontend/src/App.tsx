@@ -3,6 +3,7 @@ import { LoginPage } from './pages/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LedgerPage } from './pages/LedgerPage'
 import { TransactionDetailsPage } from './pages/TransactionDetailsPage'
+import { AuditWorkspacePage } from './pages/AuditWorkspacePage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
@@ -30,6 +31,14 @@ function App() {
         element={
           <ProtectedRoute>
             <TransactionDetailsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/audit-workspace/:id"
+        element={
+          <ProtectedRoute>
+            <AuditWorkspacePage />
           </ProtectedRoute>
         }
       />

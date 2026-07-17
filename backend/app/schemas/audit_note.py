@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 from app.models.enums import AuditNoteStatus
@@ -33,6 +35,9 @@ class AuditNoteOut(BaseModel):
     audit_flag_id: int
     status: AuditNoteStatus
     created_by_id: int | None
+    reviewed_by_id: int | None
+    submitted_at: datetime | None
+    reviewed_at: datetime | None
     summary: str
     reasoning: str
     risk_assessment: str
@@ -40,3 +45,7 @@ class AuditNoteOut(BaseModel):
     content: str
     cited_policy_ids: list[int]
     cited_policies: list[PolicySearchResult]
+
+
+class RejectAuditNoteRequest(BaseModel):
+    reason: str | None = None

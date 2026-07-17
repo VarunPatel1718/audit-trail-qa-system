@@ -101,6 +101,9 @@ export interface AuditNote {
   audit_flag_id: number
   status: AuditNoteStatus
   created_by_id: number | null
+  reviewed_by_id: number | null
+  submitted_at: string | null
+  reviewed_at: string | null
   summary: string
   reasoning: string
   risk_assessment: string

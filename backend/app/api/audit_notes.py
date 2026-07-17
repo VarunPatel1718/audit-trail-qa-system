@@ -1,18 +1,27 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, require_role
 from app.db.session import get_db
 from app.models.user import User
-from app.schemas.audit_note import AuditNoteOut
-from app.services.audit_note_service import AuditNoteError, generate_audit_note, get_latest_audit_note
+from app.schemas.audit_note import AuditNoteOut, RejectAuditNoteRequest
+from app.services.audit_note_service import (
+    AuditNoteError,
+    approve_note,
+    generate_audit_note,
+    get_latest_audit_note,
+    reject_note,
+    submit_for_review,
+)
 
 router = APIRouter(prefix="/transactions", tags=["audit-notes"])
+review_router = APIRouter(prefix="/audit-notes", tags=["audit-notes"])
 
 _ERROR_STATUS = {
     "not_found": status.HTTP_404_NOT_FOUND,
     "no_open_flags": status.HTTP_422_UNPROCESSABLE_ENTITY,
     "generation_failed": status.HTTP_502_BAD_GATEWAY,
+    "invalid_transition": status.HTTP_409_CONFLICT,
 }
 
 
@@ -48,3 +57,49 @@ def get_audit_note_endpoint(
             detail="No audit note found for this transaction",
         )
     return note
+
+
+@review_router.post("/{note_id}/submit", response_model=AuditNoteOut)
+def submit_audit_note_endpoint(
+    note_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("Auditor", "Admin")),
+) -> AuditNoteOut:
+    try:
+        return submit_for_review(db, note_id, current_user)
+    except AuditNoteError as exc:
+        raise HTTPException(
+            status_code=_ERROR_STATUS.get(exc.code, status.HTTP_500_INTERNAL_SERVER_ERROR),
+            detail=exc.message,
+        ) from exc
+
+
+@review_router.post("/{note_id}/approve", response_model=AuditNoteOut)
+def approve_audit_note_endpoint(
+    note_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("Finance Manager", "Admin")),
+) -> AuditNoteOut:
+    try:
+        return approve_note(db, note_id, current_user)
+    except AuditNoteError as exc:
+        raise HTTPException(
+            status_code=_ERROR_STATUS.get(exc.code, status.HTTP_500_INTERNAL_SERVER_ERROR),
+            detail=exc.message,
+        ) from exc
+
+
+@review_router.post("/{note_id}/reject", response_model=AuditNoteOut)
+def reject_audit_note_endpoint(
+    note_id: int,
+    payload: RejectAuditNoteRequest = RejectAuditNoteRequest(),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("Finance Manager", "Admin")),
+) -> AuditNoteOut:
+    try:
+        return reject_note(db, note_id, current_user, payload.reason)
+    except AuditNoteError as exc:
+        raise HTTPException(
+            status_code=_ERROR_STATUS.get(exc.code, status.HTTP_500_INTERNAL_SERVER_ERROR),
+            detail=exc.message,
+        ) from exc

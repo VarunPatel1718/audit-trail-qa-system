@@ -16,6 +16,7 @@ response validation can never drift apart.
 
 import json
 import re
+from datetime import datetime, timezone
 
 from pydantic import ValidationError
 from sqlalchemy import select
@@ -25,6 +26,7 @@ from app.core.config import settings
 from app.models.audit_flag import AuditFlag
 from app.models.audit_note import AuditNote
 from app.models.enums import AuditNoteStatus
+from app.models.user import User
 from app.prompts.audit_note import SYSTEM_PROMPT, build_policy_query, build_user_message
 from app.schemas.audit_note import AuditNoteDraft, AuditNoteOut
 from app.schemas.policy import PolicySearchResult
@@ -106,6 +108,35 @@ def _parse_content(content: str) -> tuple[str, str, str, str]:
     )
 
 
+def _build_audit_note_out(db: Session, note: AuditNote) -> AuditNoteOut:
+    """Shared response-shape builder for every path that returns an existing
+    AuditNote row (as opposed to generate_audit_note(), which builds its
+    response straight from the freshly-drafted LLM output instead of
+    round-tripping through `content`)."""
+    summary, reasoning, risk_assessment, recommended_action = _parse_content(note.content)
+
+    cited_policy_ids = note.cited_policy_ids or []
+    cited_policies = get_policies_by_ids(db, cited_policy_ids) if cited_policy_ids else []
+
+    return AuditNoteOut(
+        id=note.id,
+        transaction_id=note.audit_flag.transaction_id,
+        audit_flag_id=note.audit_flag_id,
+        status=note.status,
+        created_by_id=note.created_by_id,
+        reviewed_by_id=note.reviewed_by_id,
+        submitted_at=note.submitted_at,
+        reviewed_at=note.reviewed_at,
+        summary=summary,
+        reasoning=reasoning,
+        risk_assessment=risk_assessment,
+        recommended_action=recommended_action,
+        content=note.content,
+        cited_policy_ids=cited_policy_ids,
+        cited_policies=cited_policies,
+    )
+
+
 def get_latest_audit_note(db: Session, transaction_id: int) -> AuditNoteOut | None:
     """Read-only: returns the most recently generated audit note for a
     transaction, if one exists. Never calls the LLM and never writes
@@ -124,25 +155,68 @@ def get_latest_audit_note(db: Session, transaction_id: int) -> AuditNoteOut | No
     if note is None:
         return None
 
-    summary, reasoning, risk_assessment, recommended_action = _parse_content(note.content)
+    return _build_audit_note_out(db, note)
 
-    cited_policy_ids = note.cited_policy_ids or []
-    cited_policies = get_policies_by_ids(db, cited_policy_ids) if cited_policy_ids else []
 
-    return AuditNoteOut(
-        id=note.id,
-        transaction_id=transaction_id,
-        audit_flag_id=note.audit_flag_id,
-        status=note.status,
-        created_by_id=note.created_by_id,
-        summary=summary,
-        reasoning=reasoning,
-        risk_assessment=risk_assessment,
-        recommended_action=recommended_action,
-        content=note.content,
-        cited_policy_ids=cited_policy_ids,
-        cited_policies=cited_policies,
-    )
+def _get_note_or_raise(db: Session, note_id: int) -> AuditNote:
+    note = db.scalars(select(AuditNote).where(AuditNote.id == note_id)).first()
+    if note is None:
+        raise AuditNoteError("not_found", f"Audit note {note_id} not found")
+    return note
+
+
+def submit_for_review(db: Session, note_id: int, user: User) -> AuditNoteOut:
+    """Valid only from DRAFT. `user` (the submitter) isn't persisted anywhere
+    yet -- there's no submitted_by_id column, only submitted_at -- accepted
+    for parity with approve_note/reject_note and in case that's added later."""
+    note = _get_note_or_raise(db, note_id)
+    if note.status != AuditNoteStatus.DRAFT:
+        raise AuditNoteError(
+            "invalid_transition",
+            f"Audit note {note_id} is {note.status.value}, not draft; only a draft note can be submitted for review",
+        )
+    note.status = AuditNoteStatus.SUBMITTED
+    note.submitted_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(note)
+    return _build_audit_note_out(db, note)
+
+
+def approve_note(db: Session, note_id: int, reviewer: User) -> AuditNoteOut:
+    """Valid only from SUBMITTED."""
+    note = _get_note_or_raise(db, note_id)
+    if note.status != AuditNoteStatus.SUBMITTED:
+        raise AuditNoteError(
+            "invalid_transition",
+            f"Audit note {note_id} is {note.status.value}, not submitted; only a submitted note can be approved",
+        )
+    note.status = AuditNoteStatus.APPROVED
+    note.reviewed_by_id = reviewer.id
+    note.reviewed_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(note)
+    return _build_audit_note_out(db, note)
+
+
+def reject_note(db: Session, note_id: int, reviewer: User, reason: str | None) -> AuditNoteOut:
+    """Valid only from SUBMITTED."""
+    note = _get_note_or_raise(db, note_id)
+    if note.status != AuditNoteStatus.SUBMITTED:
+        raise AuditNoteError(
+            "invalid_transition",
+            f"Audit note {note_id} is {note.status.value}, not submitted; only a submitted note can be rejected",
+        )
+    note.status = AuditNoteStatus.REJECTED
+    note.reviewed_by_id = reviewer.id
+    note.reviewed_at = datetime.now(timezone.utc)
+    if reason:
+        # No dedicated rejection_reason column exists yet (out of scope for
+        # this pass, see PROGRESS.md) -- appended to `content` as the only
+        # currently-durable place to keep it from being silently dropped.
+        note.content = f"{note.content}\n\nRejection Reason: {reason}"
+    db.commit()
+    db.refresh(note)
+    return _build_audit_note_out(db, note)
 
 
 def generate_audit_note(
@@ -228,6 +302,9 @@ def generate_audit_note(
         audit_flag_id=note.audit_flag_id,
         status=note.status,
         created_by_id=note.created_by_id,
+        reviewed_by_id=note.reviewed_by_id,
+        submitted_at=note.submitted_at,
+        reviewed_at=note.reviewed_at,
         summary=draft.summary,
         reasoning=draft.reasoning,
         risk_assessment=draft.risk_assessment,

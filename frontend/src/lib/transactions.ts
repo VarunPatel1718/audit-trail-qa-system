@@ -41,6 +41,21 @@ export async function generateAuditNote(id: number): Promise<AuditNote> {
   return data
 }
 
+export async function submitAuditNote(noteId: number): Promise<AuditNote> {
+  const { data } = await apiClient.post<AuditNote>(`/audit-notes/${noteId}/submit`)
+  return data
+}
+
+export async function approveAuditNote(noteId: number): Promise<AuditNote> {
+  const { data } = await apiClient.post<AuditNote>(`/audit-notes/${noteId}/approve`)
+  return data
+}
+
+export async function rejectAuditNote(noteId: number, reason: string | null): Promise<AuditNote> {
+  const { data } = await apiClient.post<AuditNote>(`/audit-notes/${noteId}/reject`, { reason })
+  return data
+}
+
 /** Monday 00:00:00 local time of the current week, ISO-formatted for the API's date_from filter. */
 export function startOfWeekIso(): string {
   const now = new Date()
