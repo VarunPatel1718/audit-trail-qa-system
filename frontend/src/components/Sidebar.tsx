@@ -1,16 +1,17 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', to: '/dashboard', active: true },
-  { label: 'Ledger', to: '#', active: false },
-  { label: 'Audit Notes', to: '#', active: false },
-  { label: 'Reports', to: '#', active: false },
-  { label: 'Admin', to: '#', active: false },
+  { label: 'Dashboard', to: '/dashboard', enabled: true },
+  { label: 'Ledger', to: '/ledger', enabled: true },
+  { label: 'Audit Notes', to: '#', enabled: false },
+  { label: 'Reports', to: '#', enabled: false },
+  { label: 'Admin', to: '#', enabled: false },
 ]
 
 export function Sidebar() {
   const { user } = useAuth()
+  const location = useLocation()
 
   return (
     <aside className="flex w-[216px] shrink-0 flex-col gap-[26px] border-r border-surface-border-light bg-sidebar-light px-4 py-[22px] dark:border-surface-border-dark dark:bg-sidebar-dark">
@@ -27,13 +28,23 @@ export function Sidebar() {
 
       <nav className="flex flex-1 flex-col gap-0.5">
         {NAV_ITEMS.map((item) =>
-          item.active ? (
+          item.enabled ? (
             <Link
               key={item.label}
               to={item.to}
-              className="flex items-center gap-2.5 rounded-lg bg-gold-tint-light px-3 py-[9px] font-sans text-sm font-semibold text-gold-light dark:bg-gold-tint-dark dark:text-gold-dark"
+              className={
+                location.pathname === item.to
+                  ? 'flex items-center gap-2.5 rounded-lg bg-gold-tint-light px-3 py-[9px] font-sans text-sm font-semibold text-gold-light dark:bg-gold-tint-dark dark:text-gold-dark'
+                  : 'flex items-center gap-2.5 rounded-lg px-3 py-[9px] font-sans text-sm font-medium text-body-light hover:opacity-80 dark:text-body-dark'
+              }
             >
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-gold-light dark:bg-gold-dark" />
+              <span
+                className={
+                  location.pathname === item.to
+                    ? 'h-1.5 w-1.5 shrink-0 rounded-full bg-gold-light dark:bg-gold-dark'
+                    : 'h-1.5 w-1.5 shrink-0 rounded-full bg-muted-light dark:bg-muted-dark'
+                }
+              />
               {item.label}
             </Link>
           ) : (

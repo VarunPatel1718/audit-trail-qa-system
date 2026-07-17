@@ -53,3 +53,38 @@ input:focus {
 .dark .table-scroll::-webkit-scrollbar-thumb:hover {
   background-color: rgba(166, 176, 209, 0.7);
 }
+
+/*
+ * A <select>'s expanded option-list popup is native browser/OS chrome, not
+ * something Tailwind's `dark:` utility classes can reach — text color set on
+ * <option> is inherited and respected, but the popup's own background is
+ * not (background-color set there computes to transparent, so the popup
+ * falls back to its native surface). That native surface follows the CSS
+ * `color-scheme` property, which nothing in this app declared, so it always
+ * defaulted to light regardless of our `.dark` class — light theme text on
+ * that default-light popup was fine, but dark theme text rendered on the
+ * same default-light popup was low-contrast. Declaring `color-scheme` here
+ * fixes the popup's native baseline; the explicit background-color/color on
+ * select/option below then pins it to the exact Executive Navy tokens
+ * (rather than the browser's generic dark palette) in browsers that honor
+ * per-option styling.
+ */
+:root {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
+
+select option {
+  background-color: #FBFAF6; /* input.light */
+  color: #12162A; /* hi.light */
+}
+.dark select option {
+  /* Flattened equivalent of surface-dark's rgba(255,255,255,0.03) overlay on
+     bg-dark (#0A0F1C) — the option popup is its own opaque surface, not
+     layered over the app background, so the translucent token can't be used
+     directly here. */
+  background-color: #111623;
+  color: #F1F5F9; /* hi.dark */
+}
