@@ -1,8 +1,11 @@
+from datetime import datetime
+from decimal import Decimal
 from math import ceil
 
-from sqlalchemy import func, select
+from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session, joinedload
 
+from app.models.enums import RiskLevel, TransactionStatus
 from app.models.transaction import Transaction
 from app.schemas.transaction import (
     PaginatedTransactions,
@@ -20,27 +23,55 @@ _SORT_COLUMNS = {
 }
 
 
+def apply_transaction_filters(
+    stmt: Select,
+    *,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    vendor_id: int | None = None,
+    department_id: int | None = None,
+    amount_min: Decimal | None = None,
+    amount_max: Decimal | None = None,
+    status: TransactionStatus | None = None,
+    risk_level: RiskLevel | None = None,
+) -> Select:
+    """Applies the ledger's standard filter set to a `Transaction` select
+    statement. Shared by `search_transactions()` (all 8 filters) and
+    `report_service.py` (a smaller subset, for the Reports CSV export) so
+    the `.where()` chain isn't duplicated between them."""
+    if date_from is not None:
+        stmt = stmt.where(Transaction.transaction_date >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(Transaction.transaction_date <= date_to)
+    if vendor_id is not None:
+        stmt = stmt.where(Transaction.vendor_id == vendor_id)
+    if department_id is not None:
+        stmt = stmt.where(Transaction.department_id == department_id)
+    if amount_min is not None:
+        stmt = stmt.where(Transaction.amount >= amount_min)
+    if amount_max is not None:
+        stmt = stmt.where(Transaction.amount <= amount_max)
+    if status is not None:
+        stmt = stmt.where(Transaction.status == status)
+    if risk_level is not None:
+        stmt = stmt.where(Transaction.risk_level == risk_level)
+    return stmt
+
+
 def search_transactions(db: Session, filters: TransactionFilterParams) -> PaginatedTransactions:
     """Filter/sort/paginate transactions. Shared by `GET /transactions` and the
     `query_ledger` MCP tool so both stay behind one implementation."""
-    stmt = select(Transaction)
-
-    if filters.date_from is not None:
-        stmt = stmt.where(Transaction.transaction_date >= filters.date_from)
-    if filters.date_to is not None:
-        stmt = stmt.where(Transaction.transaction_date <= filters.date_to)
-    if filters.vendor_id is not None:
-        stmt = stmt.where(Transaction.vendor_id == filters.vendor_id)
-    if filters.department_id is not None:
-        stmt = stmt.where(Transaction.department_id == filters.department_id)
-    if filters.amount_min is not None:
-        stmt = stmt.where(Transaction.amount >= filters.amount_min)
-    if filters.amount_max is not None:
-        stmt = stmt.where(Transaction.amount <= filters.amount_max)
-    if filters.status is not None:
-        stmt = stmt.where(Transaction.status == filters.status)
-    if filters.risk_level is not None:
-        stmt = stmt.where(Transaction.risk_level == filters.risk_level)
+    stmt = apply_transaction_filters(
+        select(Transaction),
+        date_from=filters.date_from,
+        date_to=filters.date_to,
+        vendor_id=filters.vendor_id,
+        department_id=filters.department_id,
+        amount_min=filters.amount_min,
+        amount_max=filters.amount_max,
+        status=filters.status,
+        risk_level=filters.risk_level,
+    )
 
     total = db.scalar(select(func.count()).select_from(stmt.subquery())) or 0
 

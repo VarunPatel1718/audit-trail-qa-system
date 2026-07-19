@@ -18,11 +18,13 @@ from pydantic import ValidationError
 from mcp.server.fastmcp import FastMCP
 
 from app.db.session import SessionLocal
+from app.schemas.reports import ReportFilterParams
 from app.schemas.rules import AuditFlagOut
 from app.schemas.transaction import TransactionFilterParams
 from app.services.audit_note_service import AuditNoteError, generate_audit_note as generate_audit_note_service
 from app.services.ledger_service import get_transaction_by_id, search_transactions
 from app.services.policy_search import search_policies
+from app.services.report_service import get_flagged_transactions_report
 from app.services.risk_scoring import create_manual_flag, get_open_flags
 
 mcp = FastMCP("audit-trail-qa-system")
@@ -141,13 +143,34 @@ def risk_score(transaction_id: int) -> dict:
 
 
 @mcp.tool()
-def export_report() -> dict:
-    """Export an audit report. Placeholder -- report generation/export is a
-    later-phase Reporting Service feature, not yet implemented."""
-    return {
-        "status": "not_implemented",
-        "message": "export_report is a placeholder; report generation/export is a later-phase feature.",
-    }
+def export_report(
+    date_from: str | None = None,
+    date_to: str | None = None,
+    department_id: int | None = None,
+    status: str | None = None,
+    risk_level: str | None = None,
+) -> dict:
+    """Export flagged/audited transactions (risk_level medium, high, or
+    critical) as structured rows -- vendor/department names, amount,
+    risk_score/risk_level, and the latest audit note's status if one exists
+    (draft/submitted/approved/rejected, or "no note"). Same data
+    `GET /reports/export` streams as CSV, returned here as JSON rows instead
+    since MCP tool results are structured data, not a file download.
+    """
+    try:
+        filters = ReportFilterParams(
+            date_from=date_from,
+            date_to=date_to,
+            department_id=department_id,
+            status=status,
+            risk_level=risk_level,
+        )
+    except ValidationError as exc:
+        return {"error": "invalid_filters", "details": exc.errors()}
+
+    with SessionLocal() as db:
+        rows = get_flagged_transactions_report(db, filters)
+        return {"count": len(rows), "rows": rows}
 
 
 if __name__ == "__main__":
