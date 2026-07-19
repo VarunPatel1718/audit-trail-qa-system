@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { label: 'Policy Search', to: '/policy-search', enabled: true },
   { label: 'Case Library', to: '/case-library', enabled: true },
   { label: 'Audit Notes', to: '#', enabled: false },
-  { label: 'Reports', to: '#', enabled: false },
+  { label: 'Reports', to: '/reports', enabled: true },
   { label: 'Admin', to: '#', enabled: false },
 ]
 
