@@ -237,4 +237,4 @@ Pulled directly from the project's own tracked backlog — real, currently-true 
 
 Licensed under the [MIT License](LICENSE).
 
-Built by **Varun Patel**. Developed with AI-assisted tooling ([Claude Code](https://claude.com/claude-code)).
+Built by **Varun Patel**.
