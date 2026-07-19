@@ -5,6 +5,7 @@ import { LedgerPage } from './pages/LedgerPage'
 import { TransactionDetailsPage } from './pages/TransactionDetailsPage'
 import { AuditWorkspacePage } from './pages/AuditWorkspacePage'
 import { PolicySearchPage } from './pages/PolicySearchPage'
+import { CaseLibraryPage } from './pages/CaseLibraryPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
@@ -48,6 +49,14 @@ function App() {
         element={
           <ProtectedRoute>
             <PolicySearchPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/case-library"
+        element={
+          <ProtectedRoute>
+            <CaseLibraryPage />
           </ProtectedRoute>
         }
       />

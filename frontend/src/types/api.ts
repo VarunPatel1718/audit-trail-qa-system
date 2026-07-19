@@ -118,6 +118,17 @@ export interface AuditNote {
   cited_policies: PolicySearchResult[]
 }
 
+export interface AuditCase {
+  id: number
+  transaction_id: number | null
+  title: string
+  description: string
+  resolution: string
+  tags: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface TransactionQueryParams {
   date_from?: string
   date_to?: string
