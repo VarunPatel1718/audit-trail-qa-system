@@ -5,6 +5,7 @@ from sqlalchemy import text
 from app.api.audit_notes import review_router as audit_note_review_router
 from app.api.audit_notes import router as audit_notes_router
 from app.api.auth import router as auth_router
+from app.api.cases import router as cases_router
 from app.api.policies import router as policies_router
 from app.api.rule_engine import router as rule_engine_router
 from app.api.transactions import router as transactions_router
@@ -37,6 +38,7 @@ app.include_router(rule_engine_router, prefix=settings.api_v1_prefix)
 app.include_router(policies_router, prefix=settings.api_v1_prefix)
 app.include_router(audit_notes_router, prefix=settings.api_v1_prefix)
 app.include_router(audit_note_review_router, prefix=settings.api_v1_prefix)
+app.include_router(cases_router, prefix=settings.api_v1_prefix)
 
 
 @app.get("/health")
