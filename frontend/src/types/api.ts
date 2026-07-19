@@ -118,6 +118,11 @@ export interface AuditNote {
   cited_policies: PolicySearchResult[]
 }
 
+export interface ActiveRulesSummary {
+  count: number
+  rules: string[]
+}
+
 export interface AuditCase {
   id: number
   transaction_id: number | null

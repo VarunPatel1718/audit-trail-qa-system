@@ -7,6 +7,7 @@ import { AuditWorkspacePage } from './pages/AuditWorkspacePage'
 import { PolicySearchPage } from './pages/PolicySearchPage'
 import { CaseLibraryPage } from './pages/CaseLibraryPage'
 import { ReportsPage } from './pages/ReportsPage'
+import { AdminPanelPage } from './pages/AdminPanelPage'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 function App() {
@@ -66,6 +67,14 @@ function App() {
         element={
           <ProtectedRoute>
             <ReportsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute>
+            <AdminPanelPage />
           </ProtectedRoute>
         }
       />

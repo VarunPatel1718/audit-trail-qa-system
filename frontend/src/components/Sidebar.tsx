@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { label: 'Case Library', to: '/case-library', enabled: true },
   { label: 'Audit Notes', to: '#', enabled: false },
   { label: 'Reports', to: '/reports', enabled: true },
-  { label: 'Admin', to: '#', enabled: false },
+  { label: 'Admin', to: '/admin', enabled: true },
 ]
 
 export function Sidebar() {
