@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user, require_role
 from app.db.session import get_db
+from app.models.enums import AuditNoteStatus
 from app.models.user import User
 from app.schemas.audit_note import AuditNoteOut, RejectAuditNoteRequest
 from app.services.audit_note_service import (
@@ -11,6 +12,7 @@ from app.services.audit_note_service import (
     generate_audit_note,
     get_latest_audit_note,
     reject_note,
+    search_audit_notes,
     submit_for_review,
 )
 
@@ -57,6 +59,18 @@ def get_audit_note_endpoint(
             detail="No audit note found for this transaction",
         )
     return note
+
+
+@review_router.get("", response_model=list[AuditNoteOut])
+def list_audit_notes_endpoint(
+    status: AuditNoteStatus | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[AuditNoteOut]:
+    """Read-only: lists audit notes, optionally filtered by status. Open to
+    any authenticated role -- viewing isn't restricted, only the workflow
+    transitions (submit/approve/reject) below are."""
+    return search_audit_notes(db, status)
 
 
 @review_router.post("/{note_id}/submit", response_model=AuditNoteOut)

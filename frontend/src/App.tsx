@@ -5,6 +5,7 @@ import { LedgerPage } from './pages/LedgerPage'
 import { TransactionDetailsPage } from './pages/TransactionDetailsPage'
 import { AuditWorkspacePage } from './pages/AuditWorkspacePage'
 import { PolicySearchPage } from './pages/PolicySearchPage'
+import { AuditNotesPage } from './pages/AuditNotesPage'
 import { CaseLibraryPage } from './pages/CaseLibraryPage'
 import { ReportsPage } from './pages/ReportsPage'
 import { AdminPanelPage } from './pages/AdminPanelPage'
@@ -75,6 +76,14 @@ function App() {
         element={
           <ProtectedRoute>
             <AdminPanelPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/audit-notes"
+        element={
+          <ProtectedRoute>
+            <AuditNotesPage />
           </ProtectedRoute>
         }
       />

@@ -6,7 +6,7 @@ const NAV_ITEMS = [
   { label: 'Ledger', to: '/ledger', enabled: true },
   { label: 'Policy Search', to: '/policy-search', enabled: true },
   { label: 'Case Library', to: '/case-library', enabled: true },
-  { label: 'Audit Notes', to: '#', enabled: false },
+  { label: 'Audit Notes', to: '/audit-notes', enabled: true },
   { label: 'Reports', to: '/reports', enabled: true },
   { label: 'Admin', to: '/admin', enabled: true },
 ]

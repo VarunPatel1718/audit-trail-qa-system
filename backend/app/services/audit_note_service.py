@@ -158,6 +158,20 @@ def get_latest_audit_note(db: Session, transaction_id: int) -> AuditNoteOut | No
     return _build_audit_note_out(db, note)
 
 
+def search_audit_notes(db: Session, status: AuditNoteStatus | None = None) -> list[AuditNoteOut]:
+    """Lists audit notes, optionally filtered by status -- closes the "my
+    queue" gap deferred during the 2026-07-17 workflow-endpoints pass (e.g.
+    "all notes awaiting my review"). No pagination: the table is small
+    (currently ~10 rows) and doesn't need it yet. Reuses
+    _build_audit_note_out() so the response shape matches every other
+    audit-note endpoint exactly."""
+    stmt = select(AuditNote).order_by(AuditNote.created_at.desc(), AuditNote.id.desc())
+    if status is not None:
+        stmt = stmt.where(AuditNote.status == status)
+    notes = db.scalars(stmt).all()
+    return [_build_audit_note_out(db, note) for note in notes]
+
+
 def _get_note_or_raise(db: Session, note_id: int) -> AuditNote:
     note = db.scalars(select(AuditNote).where(AuditNote.id == note_id)).first()
     if note is None:

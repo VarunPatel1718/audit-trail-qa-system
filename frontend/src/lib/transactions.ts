@@ -2,6 +2,7 @@ import axios from 'axios'
 import { apiClient } from './apiClient'
 import type {
   AuditNote,
+  AuditNoteStatus,
   PaginatedTransactions,
   TransactionDetail,
   TransactionFlags,
@@ -26,6 +27,11 @@ export async function fetchTransactionFlags(id: number): Promise<TransactionFlag
 /** Returns null (not an error) when no note exists yet -- a 404 here is an
  * expected, common state the caller checks to decide whether to show a
  * "Generate" button, not a failure. */
+export async function fetchAuditNotes(status?: AuditNoteStatus): Promise<AuditNote[]> {
+  const { data } = await apiClient.get<AuditNote[]>('/audit-notes', { params: { status } })
+  return data
+}
+
 export async function fetchAuditNote(id: number): Promise<AuditNote | null> {
   try {
     const { data } = await apiClient.get<AuditNote>(`/transactions/${id}/audit-note`)
