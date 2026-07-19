@@ -59,6 +59,12 @@ class VendorSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class VendorUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    is_active: bool
+
+
 class DepartmentSummary(BaseModel):
     id: int
     name: str

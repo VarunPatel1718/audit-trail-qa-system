@@ -54,3 +54,8 @@ class BatchEvaluationOut(BaseModel):
     flagged_count: int
     risk_level_counts: dict[str, int]
     benfords_law: BenfordsLawOut | None
+
+
+class ActiveRulesOut(BaseModel):
+    count: int
+    rules: list[str]
