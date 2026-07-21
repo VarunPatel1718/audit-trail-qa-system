@@ -22,6 +22,7 @@ from app.schemas.reports import ReportFilterParams
 from app.schemas.rules import AuditFlagOut
 from app.schemas.transaction import TransactionFilterParams
 from app.services.audit_note_service import AuditNoteError, generate_audit_note as generate_audit_note_service
+from app.services.case_search import search_cases
 from app.services.ledger_service import get_transaction_by_id, search_transactions
 from app.services.policy_search import search_policies
 from app.services.report_service import get_flagged_transactions_report
@@ -117,6 +118,20 @@ def retrieve_policy(query: str, top_k: int = 8) -> dict:
     returning the top-k most relevant clauses with their source document and
     clause reference."""
     results = search_policies(query, top_k=top_k)
+    return {
+        "query": query,
+        "results": [r.model_dump(mode="json") for r in results],
+    }
+
+
+@mcp.tool()
+def retrieve_similar_cases(query: str, top_k: int = 8) -> dict:
+    """Semantic search over resolved historical audit cases, returning the
+    top-k most similar past cases (title, description, resolution). No
+    cases have been seeded/ingested yet, so this currently always returns
+    an empty results list -- not an error -- until the case library exists
+    and scripts/ingest_cases.py has been run."""
+    results = search_cases(query, top_k=top_k)
     return {
         "query": query,
         "results": [r.model_dump(mode="json") for r in results],

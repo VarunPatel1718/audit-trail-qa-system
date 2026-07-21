@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     # RAG layer (Phase 8)
     qdrant_url: str = "http://localhost:6333"
     qdrant_policies_collection: str = "policies"
+    qdrant_cases_collection: str = "cases"
     embedding_model_name: str = "BAAI/bge-base-en-v1.5"
     policy_search_default_top_k: int = 8
 
