@@ -6,15 +6,14 @@ import { ThemeToggle } from '../components/ThemeToggle'
 import { RiskBadge } from '../components/RiskBadge'
 import { useAuth } from '../context/AuthContext'
 import { fetchTransactions } from '../lib/transactions'
+import { fetchVendors } from '../lib/vendors'
 import { formatCurrency } from '../lib/format'
 import {
   DEPARTMENT_OPTIONS,
   RISK_LEVEL_OPTIONS,
   SORT_FIELD_OPTIONS,
   STATUS_OPTIONS,
-  VENDOR_OPTIONS,
   departmentName,
-  vendorName,
 } from '../lib/filterOptions'
 import type { RiskLevel, TransactionQueryParams, TransactionStatus } from '../types/api'
 
@@ -93,6 +92,17 @@ export function LedgerPage() {
     queryKey: ['transactions', 'ledger', queryParams],
     queryFn: () => fetchTransactions(queryParams),
   })
+
+  // Live GET /vendors, not the old hardcoded list -- intentionally includes
+  // inactive vendors (16/17) so Ledger can still filter by/display a vendor's
+  // historical activity after it's deactivated.
+  const { data: vendors } = useQuery({
+    queryKey: ['vendors'],
+    queryFn: fetchVendors,
+  })
+
+  const vendorName = (id: number): string =>
+    vendors?.find((v) => v.id === id)?.name ?? `Vendor #${id}`
 
   const items = data?.items ?? []
   const total = data?.total ?? 0
@@ -230,7 +240,7 @@ export function LedgerPage() {
               className="w-full rounded-lg border border-input-border-light bg-input-light px-3 py-2 font-sans text-[13.5px] text-hi-light focus:ring-2 focus:ring-gold-light/40 dark:border-input-border-dark dark:bg-input-dark dark:text-hi-dark dark:focus:ring-gold-dark/40"
             >
               <option value="">All vendors</option>
-              {VENDOR_OPTIONS.map((v) => (
+              {(vendors ?? []).map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.name}
                 </option>
