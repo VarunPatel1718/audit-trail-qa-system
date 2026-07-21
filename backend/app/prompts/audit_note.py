@@ -1,12 +1,18 @@
 """Prompt template for drafting an explainable audit note (Phase 10).
 
 Builds the system + user prompt for `POST /transactions/{id}/generate-audit-note`
-from a flagged transaction, its open rule-engine findings, and policy clauses
-retrieved via the Phase 8 RAG service (`app.services.policy_search`).
+from a flagged transaction, its open rule-engine findings, policy clauses
+retrieved via the Phase 8 RAG service (`app.services.policy_search`), and
+similar past audit cases retrieved via `app.services.case_search`. The case
+corpus is empty as of this writing (`audit_cases` has never been seeded), so
+`_format_cases()`'s empty-list branch is what every real generation call
+exercises today -- see PROGRESS.md for the honest "untested against real
+case data" caveat this implies.
 """
 
 from app.models.audit_flag import AuditFlag
 from app.models.transaction import Transaction
+from app.schemas.case import CaseSearchResult
 from app.schemas.policy import PolicySearchResult
 
 # Human-readable descriptions of each rule module, so Claude doesn't have to
@@ -42,15 +48,17 @@ _POLICY_QUERY_HINTS: dict[str, str] = {
 
 SYSTEM_PROMPT = """You are an internal audit assistant for a finance team's Audit Trail Q&A System.
 
-You are given a flagged financial transaction, the specific rule-engine findings that flagged it, and a set of candidate accounting/compliance policy clauses retrieved via semantic search. Draft a structured, explainable audit note that a human auditor will review and a Finance Manager will approve or reject.
+You are given a flagged financial transaction, the specific rule-engine findings that flagged it, a set of candidate accounting/compliance policy clauses retrieved via semantic search, and a set of candidate similar past audit cases retrieved via semantic search. Draft a structured, explainable audit note that a human auditor will review and a Finance Manager will approve or reject.
 
 Rules you must follow:
-- Ground every factual claim in the transaction, flag, and policy data provided below. Do not invent amounts, dates, policy clause numbers, or document names that are not present in the context.
+- Ground every factual claim in the transaction, flag, policy, and case data provided below. Do not invent amounts, dates, policy clause numbers, document names, or case details that are not present in the context.
 - Only include a policy_id in cited_policy_ids if its retrieved content is genuinely relevant to explaining or justifying this specific flag. If none of the retrieved policies are actually relevant, return an empty list — do not cite a policy just because it was retrieved.
 - Keep cited_policy_ids consistent with reasoning: every policy_id you discuss or reference in reasoning must also appear in cited_policy_ids, and every policy_id in cited_policy_ids must be discussed in reasoning. Never mention a policy_id in your reasoning text without also adding it to the cited_policy_ids list.
 - If the retrieved policies don't clearly address the flagged issue, say so plainly in your reasoning instead of forcing a connection.
+- Only include a case_id in cited_case_ids if that past case is genuinely similar and useful precedent for this specific flag (same kind of issue, comparable circumstances, or a resolution pattern worth following). If no similar cases were retrieved, or none of the retrieved ones are actually relevant, return an empty list for cited_case_ids — this is the normal, expected outcome and needs no comment or apology in your reasoning.
+- Keep cited_case_ids consistent with reasoning the same way as cited_policy_ids: every case_id you discuss must also appear in cited_case_ids, and every case_id in cited_case_ids must be discussed in reasoning.
 - When describing what a cited clause requires, match its actual verb — e.g. a clause that says a transaction type "shall be monitored" requires monitoring, not a "violation" or something "prohibited". Only use prohibitive language (violation, breach, prohibited, not permitted) if the clause text itself is prohibitive. Overstating a monitoring or reporting requirement as a violation misrepresents the policy to the reviewer.
-- Write for a human reviewer who will verify your reasoning, not just trust it — be specific about which rule finding and which policy clause (if any) support each point."""
+- Write for a human reviewer who will verify your reasoning, not just trust it — be specific about which rule finding, policy clause, and/or similar case (if any) support each point."""
 
 
 def build_policy_query(flags: list[AuditFlag]) -> str:
@@ -109,10 +117,25 @@ def _format_policies(policies: list[PolicySearchResult]) -> str:
     return "\n".join(lines)
 
 
+def _format_cases(cases: list[CaseSearchResult]) -> str:
+    if not cases:
+        return "(no similar cases retrieved)"
+    lines = []
+    for case in cases:
+        tags = f" | tags: {case.tags}" if case.tags else ""
+        lines.append(
+            f"- case_id={case.case_id} | \"{case.title}\" [relevance score {case.score:.3f}]{tags}\n"
+            f"  Description: {case.description}\n"
+            f"  Resolution: {case.resolution}"
+        )
+    return "\n".join(lines)
+
+
 def build_user_message(
     transaction: Transaction,
     flags: list[AuditFlag],
     policies: list[PolicySearchResult],
+    cases: list[CaseSearchResult],
 ) -> str:
     return (
         "## Flagged Transaction\n"
@@ -121,5 +144,7 @@ def build_user_message(
         f"{_format_flags(flags)}\n\n"
         "## Retrieved Policy Clauses (candidates — cite only if genuinely relevant)\n"
         f"{_format_policies(policies)}\n\n"
+        "## Similar Past Cases (candidates — cite only if genuinely relevant)\n"
+        f"{_format_cases(cases)}\n\n"
         "Draft the audit note now."
     )

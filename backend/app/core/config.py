@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     groq_model: str = "llama-3.3-70b-versatile"
     audit_note_max_tokens: int = 4096
     audit_note_policy_top_k: int = 5
+    audit_note_case_top_k: int = 5
 
     model_config = SettingsConfigDict(
         env_file=".env",

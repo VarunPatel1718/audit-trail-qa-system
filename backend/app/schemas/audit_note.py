@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from app.models.enums import AuditNoteStatus
+from app.schemas.case import CaseSearchResult
 from app.schemas.policy import PolicySearchResult
 
 
@@ -19,6 +20,10 @@ class AuditNoteDraft(BaseModel):
     cited_policy_ids: list[int] = Field(
         default_factory=list,
         description="policy_id values from the retrieved policy context that were actually relied upon. Empty if none are relevant.",
+    )
+    cited_case_ids: list[int] = Field(
+        default_factory=list,
+        description="case_id values from the retrieved similar-case context that were actually relied upon. Empty if none are relevant or none were retrieved.",
     )
 
 
@@ -45,6 +50,8 @@ class AuditNoteOut(BaseModel):
     content: str
     cited_policy_ids: list[int]
     cited_policies: list[PolicySearchResult]
+    cited_case_ids: list[int]
+    cited_cases: list[CaseSearchResult]
 
 
 class RejectAuditNoteRequest(BaseModel):

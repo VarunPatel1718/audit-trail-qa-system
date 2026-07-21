@@ -29,7 +29,9 @@ from app.models.enums import AuditNoteStatus
 from app.models.user import User
 from app.prompts.audit_note import SYSTEM_PROMPT, build_policy_query, build_user_message
 from app.schemas.audit_note import AuditNoteDraft, AuditNoteOut
+from app.schemas.case import CaseSearchResult
 from app.schemas.policy import PolicySearchResult
+from app.services.case_search import get_cases_by_ids, search_cases
 from app.services.groq_client import get_groq_client
 from app.services.ledger_service import get_transaction_by_id
 from app.services.policy_search import get_policies_by_ids, search_policies
@@ -45,9 +47,19 @@ _AUDIT_NOTE_TOOL_NAME = "submit_audit_note"
 # the way they would be under Claude's schema-enforced structured output.
 _POLICY_ID_MENTION_RE = re.compile(r"policy_id\D{0,3}(\d+)", re.IGNORECASE)
 
+# Same backstop, same reasoning, for case_id/cited_case_ids -- see
+# _POLICY_ID_MENTION_RE above. Not yet exercised against real non-empty
+# case data (audit_cases has no rows as of this writing), but the failure
+# mode this guards is generic to Groq's tool-calling, not policy-specific.
+_CASE_ID_MENTION_RE = re.compile(r"case_id\D{0,3}(\d+)", re.IGNORECASE)
+
 
 def _extract_mentioned_policy_ids(text: str) -> set[int]:
     return {int(match) for match in _POLICY_ID_MENTION_RE.findall(text)}
+
+
+def _extract_mentioned_case_ids(text: str) -> set[int]:
+    return {int(match) for match in _CASE_ID_MENTION_RE.findall(text)}
 
 
 class AuditNoteError(Exception):
@@ -118,6 +130,9 @@ def _build_audit_note_out(db: Session, note: AuditNote) -> AuditNoteOut:
     cited_policy_ids = note.cited_policy_ids or []
     cited_policies = get_policies_by_ids(db, cited_policy_ids) if cited_policy_ids else []
 
+    cited_case_ids = note.cited_case_ids or []
+    cited_cases = get_cases_by_ids(db, cited_case_ids) if cited_case_ids else []
+
     return AuditNoteOut(
         id=note.id,
         transaction_id=note.audit_flag.transaction_id,
@@ -134,6 +149,8 @@ def _build_audit_note_out(db: Session, note: AuditNote) -> AuditNoteOut:
         content=note.content,
         cited_policy_ids=cited_policy_ids,
         cited_policies=cited_policies,
+        cited_case_ids=cited_case_ids,
+        cited_cases=cited_cases,
     )
 
 
@@ -261,10 +278,16 @@ def generate_audit_note(
             f"Transaction {transaction_id} has no open audit flags; nothing to explain",
         )
 
+    # Same query for both RAG lookups -- the rule-finding phrases that make a
+    # good policy-search query ("duplicate payment detection and reporting",
+    # etc., see build_policy_query()) are equally good for finding similar
+    # past cases about the same kind of issue. No separate case-query
+    # construction needed.
     query = build_policy_query(flags)
     policies: list[PolicySearchResult] = search_policies(query, top_k=settings.audit_note_policy_top_k)
+    cases: list[CaseSearchResult] = search_cases(query, top_k=settings.audit_note_case_top_k)
 
-    user_message = build_user_message(transaction, flags, policies)
+    user_message = build_user_message(transaction, flags, policies, cases)
 
     client = get_groq_client()
     response = client.chat.completions.create(
@@ -312,12 +335,27 @@ def generate_audit_note(
             cited_policy_ids.append(pid)
     cited_policies = [policy for policy in policies if policy.policy_id in cited_policy_ids]
 
+    # Identical defensive reconciliation for cited_case_ids -- never trust
+    # the model's case citations any more than its policy citations. Against
+    # today's empty case corpus this always reduces to an empty list (there
+    # is nothing in retrieved_case_ids to validate against), but the logic
+    # is the same regardless of corpus size, so it starts working for real
+    # the moment any case is ever ingested, with no further code changes.
+    retrieved_case_ids = {case.case_id for case in cases}
+    mentioned_case_ids = _extract_mentioned_case_ids(draft.reasoning)
+    cited_case_ids = [cid for cid in draft.cited_case_ids if cid in retrieved_case_ids]
+    for cid in sorted(mentioned_case_ids):
+        if cid in retrieved_case_ids and cid not in cited_case_ids:
+            cited_case_ids.append(cid)
+    cited_cases = [case for case in cases if case.case_id in cited_case_ids]
+
     primary_flag = _pick_primary_flag(flags)
     note = AuditNote(
         audit_flag_id=primary_flag.id,
         content=_compose_content(draft),
         status=AuditNoteStatus.DRAFT,
         cited_policy_ids=cited_policy_ids or None,
+        cited_case_ids=cited_case_ids or None,
         created_by_id=created_by_id,
     )
     db.add(note)
@@ -340,4 +378,6 @@ def generate_audit_note(
         content=note.content,
         cited_policy_ids=cited_policy_ids,
         cited_policies=cited_policies,
+        cited_case_ids=cited_case_ids,
+        cited_cases=cited_cases,
     )

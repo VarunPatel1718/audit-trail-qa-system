@@ -100,6 +100,16 @@ export interface PolicySearchResponse {
   results: PolicySearchResult[]
 }
 
+export interface CaseSearchResult {
+  case_id: number
+  score: number
+  transaction_id: number | null
+  title: string
+  description: string
+  resolution: string
+  tags: string | null
+}
+
 export interface AuditNote {
   id: number
   transaction_id: number
@@ -116,6 +126,8 @@ export interface AuditNote {
   content: string
   cited_policy_ids: number[]
   cited_policies: PolicySearchResult[]
+  cited_case_ids: number[]
+  cited_cases: CaseSearchResult[]
 }
 
 export interface ActiveRulesSummary {
