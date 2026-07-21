@@ -1,14 +1,8 @@
 import { Link } from 'react-router-dom'
 import { LABEL_CLASS } from '../lib/pageStyles'
-import { splitRejectionReason } from '../lib/auditNote'
 import type { AuditNote } from '../types/api'
 
 export function AuditNoteContent({ note }: { note: AuditNote }) {
-  const { recommendedAction, rejectionReason } =
-    note.status === 'rejected'
-      ? splitRejectionReason(note.recommended_action)
-      : { recommendedAction: note.recommended_action, rejectionReason: null }
-
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -32,17 +26,17 @@ export function AuditNoteContent({ note }: { note: AuditNote }) {
       <div>
         <div className={LABEL_CLASS}>Recommended Action</div>
         <p className="mt-1 font-sans text-[13.5px] leading-relaxed text-body-light dark:text-body-dark">
-          {recommendedAction}
+          {note.recommended_action}
         </p>
       </div>
 
-      {rejectionReason && (
+      {note.rejection_reason && (
         <div className="rounded-lg border border-critical-border-light bg-critical-bg-light p-3.5 dark:border-critical-border-dark dark:bg-critical-bg-dark">
           <div className="font-sans text-[11.5px] font-bold uppercase tracking-wider text-critical-text-light dark:text-critical-text-dark">
             Rejection Reason
           </div>
           <p className="mt-1 font-sans text-[13px] leading-relaxed text-critical-text-light dark:text-critical-text-dark">
-            {rejectionReason}
+            {note.rejection_reason}
           </p>
         </div>
       )}

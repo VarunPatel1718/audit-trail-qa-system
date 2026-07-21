@@ -128,6 +128,7 @@ export interface AuditNote {
   cited_policies: PolicySearchResult[]
   cited_case_ids: number[]
   cited_cases: CaseSearchResult[]
+  rejection_reason: string | null
 }
 
 export interface ActiveRulesSummary {
