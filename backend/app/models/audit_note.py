@@ -32,6 +32,12 @@ class AuditNote(Base, TimestampMixin):
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
+    # Dedicated column for reject_note()'s optional reason -- previously
+    # appended to `content` as trailing text (see PROGRESS.md), which meant
+    # a rejected note's original generated content was never recoverable on
+    # its own. Nullable: only ever set on a REJECTED note with a reason.
+    rejection_reason: Mapped[str | None] = mapped_column(Text)
+
     audit_flag: Mapped["AuditFlag"] = relationship(back_populates="audit_notes")
     created_by: Mapped["User | None"] = relationship(foreign_keys=[created_by_id])
     reviewed_by: Mapped["User | None"] = relationship(foreign_keys=[reviewed_by_id])

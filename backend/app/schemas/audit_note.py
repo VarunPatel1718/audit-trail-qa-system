@@ -52,6 +52,7 @@ class AuditNoteOut(BaseModel):
     cited_policies: list[PolicySearchResult]
     cited_case_ids: list[int]
     cited_cases: list[CaseSearchResult]
+    rejection_reason: str | None
 
 
 class RejectAuditNoteRequest(BaseModel):

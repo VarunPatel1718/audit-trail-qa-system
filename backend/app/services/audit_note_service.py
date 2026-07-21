@@ -151,6 +151,7 @@ def _build_audit_note_out(db: Session, note: AuditNote) -> AuditNoteOut:
         cited_policies=cited_policies,
         cited_case_ids=cited_case_ids,
         cited_cases=cited_cases,
+        rejection_reason=note.rejection_reason,
     )
 
 
@@ -240,11 +241,7 @@ def reject_note(db: Session, note_id: int, reviewer: User, reason: str | None) -
     note.status = AuditNoteStatus.REJECTED
     note.reviewed_by_id = reviewer.id
     note.reviewed_at = datetime.now(timezone.utc)
-    if reason:
-        # No dedicated rejection_reason column exists yet (out of scope for
-        # this pass, see PROGRESS.md) -- appended to `content` as the only
-        # currently-durable place to keep it from being silently dropped.
-        note.content = f"{note.content}\n\nRejection Reason: {reason}"
+    note.rejection_reason = reason
     db.commit()
     db.refresh(note)
     return _build_audit_note_out(db, note)
@@ -380,4 +377,5 @@ def generate_audit_note(
         cited_policies=cited_policies,
         cited_case_ids=cited_case_ids,
         cited_cases=cited_cases,
+        rejection_reason=note.rejection_reason,
     )
