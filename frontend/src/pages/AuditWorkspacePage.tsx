@@ -16,7 +16,7 @@ import {
   submitAuditNote,
 } from '../lib/transactions'
 import { canReviewAuditNote, canSubmitAuditNote } from '../lib/auditNote'
-import { errorMessage } from '../lib/errors'
+import { errorMessage, isConflictError } from '../lib/errors'
 import { formatDate } from '../lib/format'
 import { CARD_CLASS, LABEL_CLASS, SECTION_TITLE_CLASS } from '../lib/pageStyles'
 
@@ -56,6 +56,15 @@ export function AuditWorkspacePage() {
   const generateMutation = useMutation({
     mutationFn: () => generateAuditNote(transactionId),
     onSuccess: () => refetchAuditNote(),
+    onError: (err) => {
+      // Defensive: shouldn't normally be reachable (the empty state only
+      // renders when GET .../audit-note already came back null), but if a
+      // draft was created elsewhere between that fetch and this click, the
+      // backend's own idempotency guard returns 409 draft_already_exists.
+      // Refetch so the real current draft replaces the empty state instead
+      // of leaving the user stuck looking at a failed action.
+      if (isConflictError(err)) refetchAuditNote()
+    },
   })
 
   const submitMutation = useMutation({
@@ -287,25 +296,45 @@ export function AuditWorkspacePage() {
                 )}
 
                 {(note.status === 'approved' || note.status === 'rejected') && (
-                  <div className="grid grid-cols-3 gap-x-6 gap-y-3">
-                    <div>
-                      <div className={LABEL_CLASS}>Submitted</div>
-                      <div className="mt-1 font-sans text-[13px] text-body-light dark:text-body-dark">
-                        {note.submitted_at ? formatDate(note.submitted_at) : '—'}
+                  <div className="flex flex-col gap-4">
+                    <div className="grid grid-cols-3 gap-x-6 gap-y-3">
+                      <div>
+                        <div className={LABEL_CLASS}>Submitted</div>
+                        <div className="mt-1 font-sans text-[13px] text-body-light dark:text-body-dark">
+                          {note.submitted_at ? formatDate(note.submitted_at) : '—'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className={LABEL_CLASS}>Reviewed By</div>
+                        <div className="mt-1 font-sans text-[13px] text-body-light dark:text-body-dark">
+                          {note.reviewed_by_id ? `User #${note.reviewed_by_id}` : '—'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className={LABEL_CLASS}>Reviewed At</div>
+                        <div className="mt-1 font-sans text-[13px] text-body-light dark:text-body-dark">
+                          {note.reviewed_at ? formatDate(note.reviewed_at) : '—'}
+                        </div>
                       </div>
                     </div>
-                    <div>
-                      <div className={LABEL_CLASS}>Reviewed By</div>
-                      <div className="mt-1 font-sans text-[13px] text-body-light dark:text-body-dark">
-                        {note.reviewed_by_id ? `User #${note.reviewed_by_id}` : '—'}
+
+                    {note.status === 'rejected' && (
+                      <div className="flex flex-col items-start gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => generateMutation.mutate()}
+                          disabled={generateMutation.isPending}
+                          className={PRIMARY_BUTTON_CLASS}
+                        >
+                          {generateMutation.isPending ? 'Regenerating…' : 'Regenerate Audit Note'}
+                        </button>
+                        {generateMutation.isError && (
+                          <p className="font-sans text-[12.5px] text-critical-text-light dark:text-critical-text-dark">
+                            {errorMessage(generateMutation.error, 'Failed to regenerate audit note.')}
+                          </p>
+                        )}
                       </div>
-                    </div>
-                    <div>
-                      <div className={LABEL_CLASS}>Reviewed At</div>
-                      <div className="mt-1 font-sans text-[13px] text-body-light dark:text-body-dark">
-                        {note.reviewed_at ? formatDate(note.reviewed_at) : '—'}
-                      </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>

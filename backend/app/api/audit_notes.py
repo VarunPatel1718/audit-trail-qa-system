@@ -24,6 +24,7 @@ _ERROR_STATUS = {
     "no_open_flags": status.HTTP_422_UNPROCESSABLE_ENTITY,
     "generation_failed": status.HTTP_502_BAD_GATEWAY,
     "invalid_transition": status.HTTP_409_CONFLICT,
+    "draft_already_exists": status.HTTP_409_CONFLICT,
 }
 
 

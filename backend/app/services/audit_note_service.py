@@ -240,6 +240,20 @@ def generate_audit_note(
     if transaction is None:
         raise AuditNoteError("not_found", f"Transaction {transaction_id} not found")
 
+    # Idempotency guard (see PROGRESS.md Blockers): a DRAFT note is still
+    # active/unresolved, so generating another one would silently duplicate
+    # it -- refuse instead, pointing the caller at the existing draft. A
+    # SUBMITTED/APPROVED/REJECTED note is a closed record of a completed
+    # review cycle, not an active duplicate, so a genuine re-generation
+    # (e.g. drafting a fresh note after a rejection) is allowed through.
+    existing = get_latest_audit_note(db, transaction_id)
+    if existing is not None and existing.status == AuditNoteStatus.DRAFT:
+        raise AuditNoteError(
+            "draft_already_exists",
+            f"Transaction {transaction_id} already has a draft audit note (id={existing.id}); "
+            "view it instead of generating a new one.",
+        )
+
     flags = get_open_flags(db, transaction_id)
     if not flags:
         raise AuditNoteError(

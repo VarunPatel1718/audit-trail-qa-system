@@ -1,0 +1,58 @@
+[
+  {
+    "id": 3,
+    "transaction_id": 1436,
+    "audit_flag_id": 323,
+    "content": "Summary: The transaction TXN-000089 is flagged for high risk due to duplicate payment and inactive vendor. The duplicate payment matches another transaction on vendor, department, and amount within 24 hours, and the vendor is marked inactive.\n\nReasoning: The rule-engine findings indicate a duplicate payment of $1069.09 to Discontinued Freight Co (VEND-017), which is marked as inactive. The retrieved policy clauses do not directly address the issue of duplicate payments to inactive vendors. However, clause 3.4 of policy_id=2215 provides a framework for early warning signals and red flagging of accounts for other banking/non-credit related transactions, which could be relevant in detecting and preventing such fraudulent activities. Clause 6.2.2 of policy_id=2249 also requires reporting of disputed/suspected or attempted fraudulent transactions, but it is not directly applicable to this case. The duplicate payment and inactive vendor status suggest a potential fraud risk, which warrants further investigation.\n\nRisk Assessment: The risk assessment for this transaction is high, with a risk score of 60, due to the combination of duplicate payment and inactive vendor. The duplicate payment could indicate an attempt to misuse the payment system, while the inactive vendor status raises concerns about the legitimacy of the transaction.\n\nRecommended Action: The auditor should investigate the transaction further to determine the legitimacy of the payment and verify whether the vendor was indeed inactive at the time of the transaction. The Finance Manager should also review the vendor master data to ensure that it is up-to-date and accurate. Additionally, the auditor may want to consider reporting this transaction to the Central Payments Fraud Information Registry (CPFIR) if it is concluded as a fraudulent transaction.",
+    "status": "draft",
+    "cited_policy_ids": [
+      2215,
+      2249
+    ],
+    "cited_case_ids": null,
+    "created_by_id": null,
+    "reviewed_by_id": null,
+    "submitted_at": null,
+    "reviewed_at": null,
+    "created_at": "2026-07-11T09:59:05.123691+00:00",
+    "updated_at": "2026-07-11T09:59:05.123691+00:00"
+  },
+  {
+    "id": 1,
+    "transaction_id": 1485,
+    "audit_flag_id": 353,
+    "content": "Summary: The transaction TXN-000074 is flagged for duplicate payment and split payment risks, totaling 7923.70 USD, which may indicate potential fraud or money laundering activities.\n\nReasoning: The rule-engine findings indicate a duplicate payment and split payment pattern, with multiple transactions to the same vendor (Globex Industrial Parts) within a short time window, exceeding the approval threshold. This aligns with policy clause 36 (Chapter VI: Customer Due Diligence (CDD) Procedure) in md_kyc_2016.pdf, which requires monitoring of large and complex transactions with unusual patterns. Additionally, clause 50 in md_kyc_2016.pdf emphasizes the use of robust software to identify and report suspicious transactions. However, none of the provided policies directly address duplicate or split payments, suggesting a potential gap in the current policy framework.\n\nRisk Assessment: The transaction's risk score of 75, categorized as critical, suggests a high risk of fraud or money laundering. The duplicate payment and split payment patterns, combined with the large transaction amount, increase the likelihood of illicit activities.\n\nRecommended Action: The Finance Manager should review the transaction and the vendor's account activity to determine if the payments are legitimate or if further investigation is required. Additionally, the audit team should consider reviewing the current policy framework to address potential gaps in detecting and preventing duplicate and split payments.",
+    "status": "draft",
+    "cited_policy_ids": [
+      2398,
+      2412
+    ],
+    "cited_case_ids": null,
+    "created_by_id": null,
+    "reviewed_by_id": null,
+    "submitted_at": null,
+    "reviewed_at": null,
+    "created_at": "2026-07-11T09:58:53.010776+00:00",
+    "updated_at": "2026-07-11T09:58:53.010776+00:00"
+  },
+  {
+    "id": 6,
+    "transaction_id": 1613,
+    "audit_flag_id": 444,
+    "content": "Summary: Transaction TXN-000098 has been flagged for a potential duplicate payment and being processed on a non-business day, with a high risk score of 50.\n\nReasoning: The transaction matches another transaction on vendor, department, and amount within a short time window, as per the rule-engine finding 'duplicate'. Additionally, it was processed on a weekend, which is considered a non-business day. While policy_id 2215 discusses an EWS Framework for other banking/non-credit related transactions, it does not directly address duplicate payments or weekend/holiday transactions. However, policy_id 2313 mentions the use of external or internal audits for further investigation in cases of suspected wrongdoing or fraudulent activity, which may be relevant in this case. Policy_id 2202 and 2218 discuss the Early Detection of Frauds and monitoring of transactions, but they do not specifically relate to the rule-engine findings. Policy_id 2310 also discusses monitoring and analysis of financial transactions, but its relevance is limited in this context. Given the information, it appears that the retrieved policies do not clearly address the flagged issues, but policy_id 2313 may be relevant for further investigation.\n\nRisk Assessment: The risk score of 50 is considered high, indicating a potential risk of fraudulent activity. The duplicate payment and weekend/holiday transaction flags contribute to this risk assessment.\n\nRecommended Action: The auditor should review the transaction and its duplicate match (TXN-000250) to determine if it is a legitimate payment or a potential fraud. Additionally, the auditor may consider using an internal or external audit as per policy_id 2313 for further investigation.",
+    "status": "draft",
+    "cited_policy_ids": [
+      2313,
+      2202,
+      2215,
+      2310
+    ],
+    "cited_case_ids": null,
+    "created_by_id": null,
+    "reviewed_by_id": null,
+    "submitted_at": null,
+    "reviewed_at": null,
+    "created_at": "2026-07-11T10:31:58.170249+00:00",
+    "updated_at": "2026-07-11T10:31:58.170249+00:00"
+  }
+]
